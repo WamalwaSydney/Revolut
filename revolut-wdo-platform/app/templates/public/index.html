@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Revolut & WDO{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero bg-primary text-white py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="display-4 fw-bold">Your Voice, Our Future</h1>
+                <p class="lead">Join thousands of citizens shaping better governance in Africa through community feedback and data-driven policy.</p>
+                <div class="mt-4">
+                    {% if not current_user.is_authenticated %}
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg me-3">Get Started</a>
+                    {% endif %}
+                    <a href="{{ url_for('feedback.submit') }}" class="btn btn-outline-light btn-lg">Submit Feedback</a>
+                </div>
+            </div>
+            <div class="col-md-6 text-center">
+                <img src="{{ url_for('static', filename='images/hero-illustration.svg') }}" alt="Community Engagement" class="img-fluid">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="display-5 fw-bold">How It Works</h2>
+            <p class="lead text-muted">Empowering citizens and governments through technology</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-3 d-inline-block mb-3">
+                            <i class="fas fa-comment-dots fa-2x"></i>
+                        </div>
+                        <h4 class="card-title">Submit Feedback</h4>
+                        <p class="card-text">Share your experiences and concerns via SMS, USSD, or our web platform.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-3 d-inline-block mb-3">
+                            <i class="fas fa-chart-line fa-2x"></i>
+                        </div>
+                        <h4 class="card-title">Data Analytics</h4>
+                        <p class="card-text">Our platform analyzes feedback to identify trends and critical issues.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-3 d-inline-block mb-3">
+                            <i class="fas fa-gavel fa-2x"></i>
+                        </div>
+                        <h4 class="card-title">Policy Impact</h4>
+                        <p class="card-text">Governments use insights to create people-centered policies and solutions.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Recent Activity Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="display-5 fw-bold">Recent Community Feedback</h2>
+            <a href="{{ url_for('feedback.list_feedback') }}" class="btn btn-outline-primary">View All</a>
+        </div>
+        
+        <div class="row g-4">
+            {% for feedback in feedback_list %}
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <span class="badge bg-primary">{{ feedback.category.value|title }}</span>
+                            <small class="text-muted">{{ feedback.created_at|time_ago }}</small>
+                        </div>
+                        <h5 class="card-title mt-2">{{ feedback.title }}</h5>
+                        <p class="card-text">{{ feedback.content|truncate(150) }}</p>
+                        <div>
+                            <span class="badge bg-secondary">{{ feedback.county }}</span>
+                            {% if feedback.constituency %}
+                                <span class="badge bg-secondary">{{ feedback.constituency }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white">
+                        <a href="{{ url_for('feedback.view', id=feedback.id) }}" class="btn btn-sm btn-outline-primary">Read More</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Active Polls Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="display-5 fw-bold">Active Polls</h2>
+            <a href="{{ url_for('polls.list_polls') }}" class="btn btn-outline-primary">View All</a>
+        </div>
+        
+        <div class="row g-4">
+            {% for poll in polls %}
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <span class="badge bg-success">Active</span>
+                            <small class="text-muted">{{ poll.created_at|time_ago }}</small>
+                        </div>
+                        <h5 class="card-title mt-2">{{ poll.title }}</h5>
+                        <p class="card-text">{{ poll.description|truncate(150) }}</p>
+                        <div class="mt-3">
+                            <strong>{{ poll.question }}</strong>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white">
+                        <a href="{{ url_for('polls.view_poll', id=poll.id) }}" class="btn btn-primary">Participate</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-5 bg-primary text-white">
+    <div class="container text-center">
+        <h2 class="display-5 fw-bold mb-3">Ready to Make Your Voice Heard?</h2>
+        <p class="lead mb-4">Join our community of engaged citizens shaping the future of governance in Africa</p>
+        <div>
+            {% if not current_user.is_authenticated %}
+                <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg me-3">Create Account</a>
+            {% endif %}
+            <a href="{{ url_for('feedback.submit') }}" class="btn btn-outline-light btn-lg">Submit Feedback</a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Time ago filter for templates
+    function timeAgo(date) {
+        const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+        let interval = seconds / 31536000;
+        
+        if (interval > 1) return Math.floor(interval) + " years ago";
+        interval = seconds / 2592000;
+        if (interval > 1) return Math.floor(interval) + " months ago";
+        interval = seconds / 86400;
+        if (interval > 1) return Math.floor(interval) + " days ago";
+        interval = seconds / 3600;
+        if (interval > 1) return Math.floor(interval) + " hours ago";
+        interval = seconds / 60;
+        if (interval > 1) return Math.floor(interval) + " minutes ago";
+        return "just now";
+    }
+    
+    // Apply to all elements with time-ago class
+    document.querySelectorAll('.time-ago').forEach(el => {
+        el.textContent = timeAgo(el.getAttribute('datetime'));
+    });
+</script>
+{% endblock %}
