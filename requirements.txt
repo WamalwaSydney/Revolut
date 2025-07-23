@@ -1,0 +1,7 @@
+Flask
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-Cors
+Flask-JWT-Extended
+textblob
+nltk
