@@ -7,17 +7,17 @@
 <section class="hero bg-primary text-white py-5">
     <div class="container">
         <div class="row align-items-center">
-            <div class="col-md-6">
-                <h1 class="display-4 fw-bold">Your Voice, Our Future</h1>
-                <p class="lead">Join thousands of citizens shaping better governance in Africa through community feedback and data-driven policy.</p>
-                <div class="mt-4">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-3">Your Voice Matters</h1>
+                <p class="lead mb-4">Join thousands of citizens shaping better governance in Africa through community feedback and data-driven policy.</p>
+                <div class="d-flex flex-wrap gap-3">
                     {% if not current_user.is_authenticated %}
-                        <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg me-3">Get Started</a>
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg px-4">Get Started</a>
                     {% endif %}
-                    <a href="{{ url_for('feedback.submit') }}" class="btn btn-outline-light btn-lg">Submit Feedback</a>
+                    <a href="{{ url_for('feedback.submit') }}" class="btn btn-outline-light btn-lg px-4">Submit Feedback</a>
                 </div>
             </div>
-            <div class="col-md-6 text-center">
+            <div class="col-lg-6 mt-4 mt-lg-0">
                 <img src="{{ url_for('static', filename='images/hero-illustration.svg') }}" alt="Community Engagement" class="img-fluid">
             </div>
         </div>
@@ -28,7 +28,7 @@
 <section class="py-5">
     <div class="container">
         <div class="text-center mb-5">
-            <h2 class="display-5 fw-bold">How It Works</h2>
+            <h2 class="display-5 fw-bold mb-3">How It Works</h2>
             <p class="lead text-muted">Empowering citizens and governments through technology</p>
         </div>
         
@@ -40,7 +40,7 @@
                             <i class="fas fa-comment-dots fa-2x"></i>
                         </div>
                         <h4 class="card-title">Submit Feedback</h4>
-                        <p class="card-text">Share your experiences and concerns via SMS, USSD, or our web platform.</p>
+                        <p class="card-text">Share your experiences via web, SMS, or USSD in multiple languages.</p>
                     </div>
                 </div>
             </div>
@@ -64,7 +64,7 @@
                             <i class="fas fa-gavel fa-2x"></i>
                         </div>
                         <h4 class="card-title">Policy Impact</h4>
-                        <p class="card-text">Governments use insights to create people-centered policies and solutions.</p>
+                        <p class="card-text">Governments use insights to create people-centered policies.</p>
                     </div>
                 </div>
             </div>
@@ -72,7 +72,7 @@
     </div>
 </section>
 
-<!-- Recent Activity Section -->
+<!-- Recent Feedback Section -->
 <section class="py-5 bg-light">
     <div class="container">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -85,16 +85,16 @@
             <div class="col-md-6">
                 <div class="card h-100">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between mb-2">
                             <span class="badge bg-primary">{{ feedback.category.value|title }}</span>
-                            <small class="text-muted">{{ feedback.created_at|time_ago }}</small>
+                            <small class="text-muted">{{ moment(feedback.created_at).fromNow() }}</small>
                         </div>
-                        <h5 class="card-title mt-2">{{ feedback.title }}</h5>
+                        <h5 class="card-title">{{ feedback.title }}</h5>
                         <p class="card-text">{{ feedback.content|truncate(150) }}</p>
-                        <div>
+                        <div class="mt-2">
                             <span class="badge bg-secondary">{{ feedback.county }}</span>
                             {% if feedback.constituency %}
-                                <span class="badge bg-secondary">{{ feedback.constituency }}</span>
+                                <span class="badge bg-secondary ms-1">{{ feedback.constituency }}</span>
                             {% endif %}
                         </div>
                     </div>
@@ -102,6 +102,12 @@
                         <a href="{{ url_for('feedback.view', id=feedback.id) }}" class="btn btn-sm btn-outline-primary">Read More</a>
                     </div>
                 </div>
+            </div>
+            {% else %}
+            <div class="col-12 text-center py-4">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <h5>No Feedback Available</h5>
+                <p class="text-muted">Be the first to submit feedback!</p>
             </div>
             {% endfor %}
         </div>
@@ -121,12 +127,12 @@
             <div class="col-md-6">
                 <div class="card h-100">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between mb-2">
                             <span class="badge bg-success">Active</span>
-                            <small class="text-muted">{{ poll.created_at|time_ago }}</small>
+                            <small class="text-muted">{{ moment(poll.created_at).fromNow() }}</small>
                         </div>
-                        <h5 class="card-title mt-2">{{ poll.title }}</h5>
-                        <p class="card-text">{{ poll.description|truncate(150) }}</p>
+                        <h5 class="card-title">{{ poll.title }}</h5>
+                        <p class="card-text">{{ poll.description|default('', true)|truncate(100) }}</p>
                         <div class="mt-3">
                             <strong>{{ poll.question }}</strong>
                         </div>
@@ -135,6 +141,12 @@
                         <a href="{{ url_for('polls.view_poll', id=poll.id) }}" class="btn btn-primary">Participate</a>
                     </div>
                 </div>
+            </div>
+            {% else %}
+            <div class="col-12 text-center py-4">
+                <i class="fas fa-poll fa-3x text-muted mb-3"></i>
+                <h5>No Active Polls</h5>
+                <p class="text-muted">Check back later for new polls!</p>
             </div>
             {% endfor %}
         </div>
@@ -146,38 +158,17 @@
     <div class="container text-center">
         <h2 class="display-5 fw-bold mb-3">Ready to Make Your Voice Heard?</h2>
         <p class="lead mb-4">Join our community of engaged citizens shaping the future of governance in Africa</p>
-        <div>
+        <div class="d-flex justify-content-center gap-3">
             {% if not current_user.is_authenticated %}
-                <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg me-3">Create Account</a>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg px-4">Create Account</a>
             {% endif %}
-            <a href="{{ url_for('feedback.submit') }}" class="btn btn-outline-light btn-lg">Submit Feedback</a>
+            <a href="{{ url_for('feedback.submit') }}" class="btn btn-outline-light btn-lg px-4">Submit Feedback</a>
         </div>
     </div>
 </section>
 {% endblock %}
 
 {% block scripts %}
-<script>
-    // Time ago filter for templates
-    function timeAgo(date) {
-        const seconds = Math.floor((new Date() - new Date(date)) / 1000);
-        let interval = seconds / 31536000;
-        
-        if (interval > 1) return Math.floor(interval) + " years ago";
-        interval = seconds / 2592000;
-        if (interval > 1) return Math.floor(interval) + " months ago";
-        interval = seconds / 86400;
-        if (interval > 1) return Math.floor(interval) + " days ago";
-        interval = seconds / 3600;
-        if (interval > 1) return Math.floor(interval) + " hours ago";
-        interval = seconds / 60;
-        if (interval > 1) return Math.floor(interval) + " minutes ago";
-        return "just now";
-    }
-    
-    // Apply to all elements with time-ago class
-    document.querySelectorAll('.time-ago').forEach(el => {
-        el.textContent = timeAgo(el.getAttribute('datetime'));
-    });
-</script>
+{{ super() }}
+{{ moment.include_moment() }}
 {% endblock %}

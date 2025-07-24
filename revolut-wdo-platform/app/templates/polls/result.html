@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}{{ poll.title }} Results - Revolut & WDO{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h1 class="h3 fw-bold mb-2">{{ poll.title }} - Results</h1>
+                            <span class="badge bg-secondary">Closed</span>
+                            {% if poll.county %}
+                            <span class="badge bg-primary ms-1">{{ poll.county }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted">{{ moment(poll.created_at).format('LLL') }}</small>
+                        </div>
+                    </div>
+
+                    {% if poll.description %}
+                    <div class="mb-4">
+                        <p>{{ poll.description }}</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-4">
+                        <h3 class="h5 fw-bold">{{ poll.question }}</h3>
+                    </div>
+
+                    <div class="mb-4">
+                        <p class="text-muted">Total votes: {{ total_votes }}</p>
+                    </div>
+
+                    <div class="mb-4">
+                        {% for option in poll.options %}
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>{{ option.text }}</span>
+                                <span>{{ option.vote_count }} votes ({{ "%.1f"|format(option.vote_count / total_votes * 100 if total_votes > 0 else 0) }}%)</span>
+                            </div>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar bg-primary" role="progressbar"
+                                     style="width: {{ option.vote_count / total_votes * 100 if total_votes > 0 else 0 }}%;"
+                                     aria-valuenow="{{ option.vote_count }}"
+                                     aria-valuemin="0"
+                                     aria-valuemax="{{ total_votes }}">
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('polls.list_polls') }}" class="btn btn-outline-secondary">
+                            Back to Polls
+                        </a>
+                        {% if current_user.is_authenticated and current_user.is_government() %}
+                        <a href="{{ url_for('polls.create') }}" class="btn btn-primary">
+                            Create New Poll
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -16,7 +16,7 @@ def login():
     """User login"""
     if current_user.is_authenticated:
         return redirect(url_for('dashboard.citizen'))
-    
+
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
@@ -33,7 +33,7 @@ def register():
     """User registration"""
     if current_user.is_authenticated:
         return redirect(url_for('dashboard.citizen'))
-    
+
     form = RegistrationForm()
     if form.validate_on_submit():
         user = User(
@@ -57,3 +57,38 @@ def logout():
     logout_user()
     flash('You have been logged out.', 'success')
     return redirect(url_for('main.index'))
+
+@auth.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    if current_user.is_authenticated and current_user.role == 'admin':
+        return redirect(url_for('admin.dashboard'))
+
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user and user.check_password(form.password.data) and user.role == 'admin':
+            login_user(user)
+            return redirect(url_for('admin.dashboard'))
+        else:
+            flash('Invalid credentials or not an admin.', 'danger')
+    return render_template('auth/admin_login.html', form=form)
+
+@auth.route('/admin/register', methods=['GET', 'POST'])
+def admin_register():
+
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        user = User(
+            username=form.username.data,
+            email=form.email.data,
+            role='admin',
+            is_active=True
+        )
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash('Admin registered successfully.', 'success')
+        return redirect(url_for('admin.dashboard'))
+
+    return render_template('auth/admin_registration.html', form=form)
+

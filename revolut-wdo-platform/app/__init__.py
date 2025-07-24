@@ -23,6 +23,28 @@ bootstrap = Bootstrap()
 def create_app():
     app = Flask(__name__)
 
+    @app.template_filter('time_ago')
+    def time_ago_filter(dt):
+        """Custom Jinja2 filter for displaying time since creation"""
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        diff = now - dt
+
+        if diff.days > 365:
+            years = diff.days // 365
+            return f"{years} year{'s' if years > 1 else ''} ago"
+        if diff.days > 30:
+            months = diff.days // 30
+            return f"{months} month{'s' if months > 1 else ''} ago"
+        if diff.days > 0:
+            return f"{diff.days} day{'s' if diff.days > 1 else ''} ago"
+        if diff.seconds > 3600:
+            hours = diff.seconds // 3600
+            return f"{hours} hour{'s' if hours > 1 else ''} ago"
+        if diff.seconds > 60:
+            minutes = diff.seconds // 60
+            return f"{minutes} minute{'s' if minutes > 1 else ''} ago"
+        return "just now"
     # Configuration
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key')
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///revolut_wdo.db')
@@ -87,6 +109,8 @@ def create_app():
     from app.routes.api import api
     from app.routes.sms_ussd import sms_ussd
     from app.routes.polls import polls
+    from app.models import User, UserRole  # Add UserRole to the import
+    from flask_moment import Moment
 
     app.register_blueprint(main)
     app.register_blueprint(auth, url_prefix='/auth')
@@ -110,11 +134,11 @@ def create_app():
                 admin_user = User(
                     username='admin',
                     email=admin_email,
-                    role='admin',
+                    role=UserRole.ADMIN,
                     is_active=True
                 )
                 admin_user.set_password(admin_password)
                 db.session.add(admin_user)
                 db.session.commit()
-
+    moment=Moment(app)
     return app

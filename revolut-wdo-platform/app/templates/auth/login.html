@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Revolut & WDO{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <h2 class="h4 fw-bold">Sign In</h2>
+                        <p class="text-muted">Access your account to submit feedback and participate in polls</p>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('auth.login') }}" class="needs-validation" novalidate>
+                        {{ form.hidden_tag() }}
+
+                        <div class="mb-3">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="your@email.com") }}
+                            {% for error in form.email.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+
+                        <div class="mb-3">
+                            {{ form.password.label(class="form-label") }}
+                            {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="••••••••") }}
+                            {% for error in form.password.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="d-grid mb-3">
+                            <button type="submit" class="btn btn-primary">Login</button>
+                        </div>
+
+                        <div class="text-center">
+                            <p class="small mb-0">Don't have an account? <a href="{{ url_for('auth.register') }}">Register here</a></p>
+                            <p class="small mb-0">Are you an Admin? <a href="{{ url_for('auth.admin_login') }}">Register here</a></p>
+                            <p class="small"><a href="#">Forgot password?</a></p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

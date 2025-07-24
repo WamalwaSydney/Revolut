@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, session, redirect, url_for
+from flask import Blueprint, render_template, session, redirect, url_for, request
 from flask_login import current_user
 from app.models import Feedback, Poll
 
@@ -11,17 +11,17 @@ def index():
         if current_user.is_government() or current_user.is_admin():
             return redirect(url_for('dashboard.government'))
         return redirect(url_for('dashboard.citizen'))
-    
+
     # Get some public feedback and polls for the homepage
     feedback_list = Feedback.query.filter_by(is_anonymous=False).order_by(
         Feedback.created_at.desc()
     ).limit(5).all()
-    
+
     polls = Poll.query.filter(
         Poll.is_active == True,
         Poll.is_public == True
     ).limit(2).all()
-    
+
     return render_template('public/index.html', feedback_list=feedback_list, polls=polls)
 
 @main.route('/about')
