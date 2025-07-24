@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify,redirect,url_for
 from flask_login import login_required, current_user
-from app.models import Feedback, Poll, User
+from app.models import Feedback, Poll, User, Feedback
 from app.utils.analytics import AnalyticsDashboard, SentimentAnalyzer
 from app import db
 from datetime import datetime, timedelta
@@ -42,6 +42,13 @@ def citizen():
 @login_required
 def government():
     """Government dashboard with analytics"""
+    feedbacks = Feedback.query.all()
+
+    for feedback in feedbacks:
+        try:
+            feedback.sentiment_score = float(feedback.sentiment_score or 0.0)
+        except (ValueError, TypeError):
+            feedback.sentiment_score = 0.0
     if not current_user.is_government():
         return redirect(url_for('dashboard.citizen'))
 
@@ -60,7 +67,7 @@ def government():
                          stats=stats,
                          trending=trending,
                          user_stats=user_stats,
-                         priority_feedback=priority_feedback)
+                         priority_feedback=priority_feedback,feedbacks=feedbacks)
 
 @dashboard.route('/analytics')
 @login_required
