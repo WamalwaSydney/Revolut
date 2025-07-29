@@ -37,16 +37,67 @@ def scorecards():
 @main.route('/api/dashboard-data')
 def dashboard_data():
     """Get dashboard data"""
-    from app.models import Poll, UserFeedback, Issue, Official
-    
+    from app.models import Poll, UserFeedback, Issue, Official, User
+    from datetime import datetime
+
     try:
         # Get basic statistics
+        total_users = User.query.count()
         total_polls = Poll.query.count()
+        active_polls = Poll.query.filter(Poll.expires_at > datetime.utcnow()).all()
         total_feedback = UserFeedback.query.count()
         total_issues = Issue.query.count()
         total_officials = Official.query.count()
-        
+
+        # Get feedback stats by location
+        feedback_stats = db.session.query(
+            UserFeedback.location,
+            db.func.avg(UserFeedback.sentiment_score).label('avg_sentiment'),
+            db.func.count().label('count')
+        ).filter(UserFeedback.location.isnot(None)).group_by(UserFeedback.location).all()
+
+        # Format feedback stats
+        formatted_feedback_stats = []
+        for location, avg_sentiment, count in feedback_stats:
+            formatted_feedback_stats.append({
+                'location': location,
+                'avg_sentiment': float(avg_sentiment) if avg_sentiment else 0.0,
+                'count': count
+            })
+
+        # Format active polls with vote counts
+        formatted_active_polls = []
+        for poll in active_polls:
+            total_votes = sum(opt.get('votes', 0) for opt in poll.options if isinstance(opt, dict))
+            formatted_active_polls.append({
+                'id': poll.id,
+                'question': poll.question,
+                'options': poll.options,
+                'total_votes': total_votes,
+                'expires_at': poll.expires_at.isoformat(),
+                'created_at': poll.created_at.isoformat()
+            })
+
+        # Get recent alerts
+        from app.models import Alert
+        recent_alerts = Alert.query.order_by(Alert.created_at.desc()).limit(5).all()
+        formatted_alerts = []
+        for alert in recent_alerts:
+            formatted_alerts.append({
+                'topic': alert.topic,
+                'severity': alert.severity,
+                'created_at': alert.created_at.isoformat()
+            })
+
         return jsonify({
+            'total_users': total_users,
+            'total_polls': total_polls,
+            'active_polls': formatted_active_polls,
+            'total_feedback': total_feedback,
+            'total_issues': total_issues,
+            'officials_count': total_officials,
+            'feedback_stats': formatted_feedback_stats,
+            'recent_alerts': formatted_alerts,
             'stats': {
                 'total_polls': total_polls,
                 'total_feedback': total_feedback,
@@ -163,7 +214,7 @@ def health_check():
     return jsonify({'status': 'healthy', 'service': 'revolut-wdo'})
 
 @main.route('/polls/create')
-@login_required 
+@login_required
 @role_required('cso')  # Only CSOs can create polls
 def create_poll_page():
     """Render poll creation page"""

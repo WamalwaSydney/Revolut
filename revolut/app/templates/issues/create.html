@@ -81,6 +81,7 @@
 document.getElementById('issueForm').addEventListener('submit', function(e) {
     e.preventDefault();
 
+    // Get form data
     const formData = {
         title: document.getElementById('issueTitle').value,
         description: document.getElementById('issueDescription').value,
@@ -90,13 +91,28 @@ document.getElementById('issueForm').addEventListener('submit', function(e) {
         contact: document.getElementById('issueContact').value
     };
 
+    console.log('Submitting issue:', formData);
+
+    // Disable submit button and show loading state
+    const submitBtn = document.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creating Issue...';
+
     fetch('/api/issues', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
+        console.log('Response data:', data);
         if (data.error) {
             alert(`Error: ${data.error}`);
         } else {
@@ -105,8 +121,13 @@ document.getElementById('issueForm').addEventListener('submit', function(e) {
         }
     })
     .catch(error => {
-        alert('Error creating issue. Please try again.');
-        console.error('Error:', error);
+        console.error('Error creating issue:', error);
+        alert('Error creating issue: ' + error.message + '. Please try again.');
+    })
+    .finally(() => {
+        // Re-enable submit button
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
     });
 });
 </script>

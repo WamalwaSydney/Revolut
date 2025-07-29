@@ -398,14 +398,14 @@
                         <div id="poll-options-${poll.id}">
                             ${poll.options.map((option, optionIndex) => `
                                 <div class="poll-option ${hasVoted ? 'voted' : ''}"
-                                     onclick="${!hasVoted && isActive ? `selectOption(${poll.id}, ${option.id || optionIndex})` : ''}"
-                                     data-option-id="${option.id || optionIndex}">
+                                     onclick="${!hasVoted && isActive ? `selectOption(${poll.id}, ${option.id || (optionIndex + 1)})` : ''}"
+                                     data-option-id="${option.id || (optionIndex + 1)}">
                                     <div class="d-flex align-items-center justify-content-between mb-2">
                                         <label class="form-check-label d-flex align-items-center mb-0" style="cursor: ${hasVoted || !isActive ? 'default' : 'pointer'};">
                                             ${!hasVoted && isActive ? `
                                                 <input type="radio"
                                                        name="poll-${poll.id}"
-                                                       value="${option.id || optionIndex}"
+                                                       value="${option.id || (optionIndex + 1)}"
                                                        class="form-check-input">
                                             ` : ''}
                                             <span>${escapeHtml(option.text)}</span>
@@ -484,6 +484,8 @@
             button.disabled = true;
 
             try {
+                console.log(`Submitting vote for poll ${pollId}, option ${selectedOption.value}`);
+
                 const response = await fetch(`/api/polls/${pollId}/vote`, {
                     method: 'POST',
                     headers: {
@@ -494,7 +496,12 @@
                     })
                 });
 
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const result = await response.json();
+                console.log('Vote response:', result);
 
                 if (response.ok) {
                     // Mark this poll as voted

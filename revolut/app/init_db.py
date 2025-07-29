@@ -1,17 +1,16 @@
-# init_db.py - Database initialization script
+# init_db.py - Run this script to initialize your database
 from app import create_app, db
-from app.models import User, Role, Official, Poll
-from datetime import datetime, timedelta
+from app.models import User, Role, Official
+from werkzeug.security import generate_password_hash
 
 def init_database():
-    """Initialize database with default data"""
+    """Initialize the database with basic data"""
     app = create_app()
 
     with app.app_context():
         # Create all tables
         db.create_all()
 
-        print("Creating roles...")
         # Create roles if they don't exist
         roles_data = [
             {'name': 'admin', 'description': 'System administrator'},
@@ -27,82 +26,65 @@ def init_database():
                 db.session.add(role)
                 print(f"Created role: {role_data['name']}")
 
-        db.session.commit()
-
-        print("Creating test users...")
-        # Create test users
-        test_users = [
-            {
-                'username': 'admin',
-                'email': 'admin@revolut.com',
-                'password': 'admin123',
-                'role': 'admin'
-            },
-            {
-                'username': 'cso_user',
-                'email': 'cso@revolut.com',
-                'password': 'cso123',
-                'role': 'cso'
-            },
-            {
-                'username': 'citizen',
-                'email': 'citizen@revolut.com',
-                'password': 'citizen123',
-                'role': 'citizen'
-            },
-            {
-                'username': 'testuser',
-                'email': 'test@example.com',
-                'password': 'password123',
-                'role': 'citizen'
-            }
-        ]
-
-        for user_data in test_users:
-            # Check if user already exists
-            existing_user = User.query.filter_by(username=user_data['username']).first()
-            if existing_user:
-                print(f"User {user_data['username']} already exists, skipping...")
-                continue
-
-            # Create new user
-            user = User(
-                username=user_data['username'],
-                email=user_data['email'],
-                active=True,
-                created_at=datetime.utcnow()
+        # Create admin user if doesn't exist
+        admin_user = User.query.filter_by(username='admin').first()
+        if not admin_user:
+            admin_user = User(
+                username='admin',
+                email='admin@revolut.co.ke',
+                active=True
             )
+            admin_user.set_password('admin123')  # Change this password!
 
-            # Set password using the model method
-            user.set_password(user_data['password'])
+            admin_role = Role.query.filter_by(name='admin').first()
+            if admin_role:
+                admin_user.roles.append(admin_role)
 
-            # Add role
-            role = Role.query.filter_by(name=user_data['role']).first()
-            if role:
-                user.roles.append(role)
+            db.session.add(admin_user)
+            print("Created admin user (username: admin, password: admin123)")
 
-            db.session.add(user)
-            print(f"Created user: {user_data['username']} with password: {user_data['password']}")
+        # Create sample CSO user
+        cso_user = User.query.filter_by(username='cso_demo').first()
+        if not cso_user:
+            cso_user = User(
+                username='cso_demo',
+                email='cso@demo.co.ke',
+                active=True
+            )
+            cso_user.set_password('cso123')
 
-        db.session.commit()
+            cso_role = Role.query.filter_by(name='cso').first()
+            if cso_role:
+                cso_user.roles.append(cso_role)
 
-        print("Creating sample officials...")
+            db.session.add(cso_user)
+            print("Created CSO demo user (username: cso_demo, password: cso123)")
+
         # Create sample officials
         sample_officials = [
             {
-                'name': 'John Doe',
+                'name': 'John Kamau',
                 'position': 'Governor',
-                'constituency': 'Nairobi',
-                'department': 'Executive',
+                'constituency': 'Nairobi County',
+                'department': 'County Government',
                 'ratings': [],
                 'average_score': 0.0,
                 'rating_count': 0
             },
             {
-                'name': 'Jane Smith',
+                'name': 'Mary Wanjiku',
                 'position': 'MP',
                 'constituency': 'Westlands',
-                'department': 'Legislative',
+                'department': 'Parliament',
+                'ratings': [],
+                'average_score': 0.0,
+                'rating_count': 0
+            },
+            {
+                'name': 'Peter Ochieng',
+                'position': 'Senator',
+                'constituency': 'Kisumu County',
+                'department': 'Senate',
                 'ratings': [],
                 'average_score': 0.0,
                 'rating_count': 0
@@ -110,79 +92,20 @@ def init_database():
         ]
 
         for official_data in sample_officials:
-            existing_official = Official.query.filter_by(
+            official = Official.query.filter_by(
                 name=official_data['name'],
-                position=official_data['position']
+                constituency=official_data['constituency']
             ).first()
-
-            if not existing_official:
+            if not official:
                 official = Official(**official_data)
                 db.session.add(official)
                 print(f"Created official: {official_data['name']}")
 
+        # Commit all changes
         db.session.commit()
+        print("Database initialized successfully!")
 
-        print("Creating sample poll...")
-        # Create a sample poll
-        admin_user = User.query.filter_by(username='admin').first()
-        if admin_user:
-            existing_poll = Poll.query.first()
-            if not existing_poll:
-                poll = Poll(
-                    question="How would you rate the current education system?",
-                    options=[
-                        {"id": 1, "text": "Excellent", "votes": 0},
-                        {"id": 2, "text": "Good", "votes": 0},
-                        {"id": 3, "text": "Fair", "votes": 0},
-                        {"id": 4, "text": "Poor", "votes": 0}
-                    ],
-                    created_by=admin_user.id,
-                    expires_at=datetime.utcnow() + timedelta(days=30)
-                )
-                db.session.add(poll)
-                print("Created sample poll")
+        return True
 
-        db.session.commit()
-
-        print("Database initialization completed!")
-        print("\n=== TEST USERS CREATED ===")
-        print("Admin: username='admin', password='admin123'")
-        print("CSO: username='cso_user', password='cso123'")
-        print("Citizen: username='citizen', password='citizen123'")
-        print("Test: username='testuser', password='password123'")
-        print("============================")
-
-def test_user_passwords():
-    """Test that user passwords work correctly"""
-    app = create_app()
-
-    with app.app_context():
-        print("\n=== TESTING USER PASSWORDS ===")
-
-        test_users = [
-            ('admin', 'admin123'),
-            ('cso_user', 'cso123'),
-            ('citizen', 'citizen123'),
-            ('testuser', 'password123')
-        ]
-
-        for username, password in test_users:
-            user = User.query.filter_by(username=username).first()
-            if user:
-                can_login = user.check_password(password)
-                print(f"User: {username}")
-                print(f"  Password: {password}")
-                print(f"  Can login: {can_login}")
-                print(f"  Hash exists: {user.password_hash is not None}")
-                print(f"  Hash length: {len(user.password_hash) if user.password_hash else 0}")
-                print(f"  Active: {user.active}")
-                print("---")
-            else:
-                print(f"User {username} not found!")
-
-        print("=== END PASSWORD TEST ===\n")
-
-if __name__ == '__main__':
-    print("Initializing database...")
+if __name__ == "__main__":
     init_database()
-    test_user_passwords()
