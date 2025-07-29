@@ -219,95 +219,6 @@
             }
         });
 
-        // Form submission handler
-        document.getElementById('registerForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            const terms = document.getElementById('terms').checked;
-
-            // Clear previous alerts
-            document.getElementById('alertContainer').innerHTML = '';
-
-            // Validation checks
-            if (password !== confirmPassword) {
-                showAlert('<i class="bi bi-exclamation-triangle"></i> Passwords do not match!');
-                return;
-            }
-
-            if (password.length < 6) {
-                showAlert('<i class="bi bi-exclamation-triangle"></i> Password must be at least 6 characters long!');
-                return;
-            }
-
-            if (!terms) {
-                showAlert('<i class="bi bi-exclamation-triangle"></i> You must agree to the Terms of Service and Privacy Policy!');
-                return;
-            }
-
-            const formData = new FormData(this);
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerHTML;
-
-            // Show loading state
-            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creating account...';
-            submitBtn.disabled = true;
-
-            // Simulate API call (replace with actual endpoint)
-            fetch(this.action, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (response.redirected) {
-                    // If redirected, follow the redirect
-                    window.location.href = response.url;
-                    return;
-                }
-
-                // Parse JSON response
-                return response.json().then(data => {
-                    if (!response.ok) {
-                        throw new Error(data.message || 'Registration failed');
-                    }
-                    return data;
-                });
-            })
-            .then(data => {
-                if (data) {
-                    // Show success message
-                    showAlert('<i class="bi bi-check-circle"></i> Account created successfully! Redirecting...', 'success');
-
-                    // Redirect after 2 seconds
-                    setTimeout(() => {
-                        window.location.href = '/auth/login';
-                    }, 2000);
-                }
-            })
-            .catch(error => {
-                console.error('Registration error:', error);
-
-                // Show error message
-                let errorMessage = '<i class="bi bi-exclamation-triangle"></i> ';
-
-                if (error.message) {
-                    errorMessage += error.message;
-                } else if (error.toString().includes('NetworkError') || error.toString().includes('Failed to fetch')) {
-                    errorMessage += 'Network error. Please check your connection and try again.';
-                } else {
-                    errorMessage += 'An unexpected error occurred. Please try again.';
-                }
-
-                showAlert(errorMessage);
-            })
-            .finally(() => {
-                // Reset button state
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            });
-        });
-
         // Email validation
         document.getElementById('email').addEventListener('blur', function() {
             const email = this.value;
@@ -370,25 +281,25 @@
 
             // Validation checks
             if (password !== confirmPassword) {
-                showAlert('danger', '<i class="bi bi-exclamation-triangle"></i> Passwords do not match!');
+                showAlert('<i class="bi bi-exclamation-triangle"></i> Passwords do not match!', 'danger');
                 return false;
             }
 
             if (password.length < 6) {
-                showAlert('danger', '<i class="bi bi-exclamation-triangle"></i> Password must be at least 6 characters long!');
+                showAlert('<i class="bi bi-exclamation-triangle"></i> Password must be at least 6 characters long!', 'danger');
                 return false;
             }
 
             if (!terms) {
-                showAlert('danger', '<i class="bi bi-exclamation-triangle"></i> You must agree to the Terms of Service and Privacy Policy!');
+                showAlert('<i class="bi bi-exclamation-triangle"></i> You must agree to the Terms of Service and Privacy Policy!', 'danger');
                 return false;
             }
 
             return true;
         }
 
-        // Form submission
-        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+        // Form submission - single handler
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
             e.preventDefault();
 
             // Clear previous alerts
@@ -399,46 +310,74 @@
                 return;
             }
 
-            try {
-                const formData = new FormData(this);
-                const data = Object.fromEntries(formData.entries());
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
 
-                // Add terms acceptance
-                data.terms = document.getElementById('terms').checked;
+            // Show loading state
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creating account...';
+            submitBtn.disabled = true;
 
-                const response = await fetch('/auth/register', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(data)
-                });
+            // Use FormData for consistency with backend expectations
+            const formData = new FormData(this);
 
-                // Check if response is JSON
+            fetch(this.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.redirected) {
+                    // If redirected, follow the redirect
+                    window.location.href = response.url;
+                    return { success: true };
+                }
+
+                // Try to parse JSON response
                 const contentType = response.headers.get('content-type');
                 if (contentType && contentType.includes('application/json')) {
-                    const result = await response.json();
-
-                    if (response.ok && result.success) {
-                        showAlert('success', result.message || 'Registration successful! Redirecting to login...');
-                        setTimeout(() => {
-                            window.location.href = '/auth/login';
-                        }, 2000);
-                    } else {
-                        showAlert('danger', result.error || 'Registration failed. Please try again.');
-                    }
+                    return response.json().then(data => {
+                        if (!response.ok) {
+                            throw new Error(data.error || 'Registration failed');
+                        }
+                        return data;
+                    });
                 } else {
-                    // Handle HTML response (likely an error page)
-                    if (response.status === 404) {
-                        showAlert('danger', 'Registration service not found. Please contact support.');
-                    } else {
-                        showAlert('danger', `Server error (${response.status}). Please try again.`);
+                    // Handle non-JSON response
+                    if (!response.ok) {
+                        throw new Error(`Server error (${response.status})`);
                     }
+                    return { success: true };
                 }
-            } catch (error) {
+            })
+            .then(data => {
+                // Show success message
+                showAlert('<i class="bi bi-check-circle"></i> Account created successfully! Redirecting...', 'success');
+
+                // Redirect after 2 seconds
+                setTimeout(() => {
+                    window.location.href = '/auth/login';
+                }, 2000);
+            })
+            .catch(error => {
                 console.error('Registration error:', error);
-                showAlert('danger', 'An unexpected error occurred. Please try again.');
-            }
+
+                // Show error message
+                let errorMessage = '<i class="bi bi-exclamation-triangle"></i> ';
+
+                if (error.message) {
+                    errorMessage += error.message;
+                } else if (error.toString().includes('NetworkError') || error.toString().includes('Failed to fetch')) {
+                    errorMessage += 'Network error. Please check your connection and try again.';
+                } else {
+                    errorMessage += 'An unexpected error occurred. Please try again.';
+                }
+
+                showAlert(errorMessage, 'danger');
+            })
+            .finally(() => {
+                // Reset button state
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            });
         });
     </script>
 </body>

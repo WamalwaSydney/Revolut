@@ -60,38 +60,8 @@ def submit_feedback():
         "issue_linked": bool(issue)
     })
 
-@api.route('/polls', methods=['POST'])
-def create_poll():
-    data = request.get_json()
-
-    poll = Poll(
-        question=data['question'],
-        options=data['options'],
-        expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=7)
-    )
-
-    db.session.add(poll)
-    db.session.commit()
-
-    return jsonify({"status": "success", "id": poll.id})
-
-@api.route('/polls/<int:poll_id>/vote', methods=['POST'])
-def vote_poll(poll_id):
-    data = request.get_json()
-    poll = Poll.query.get_or_404(poll_id)
-
-    # Update vote count
-    if 'option_index' in data:
-        if not isinstance(poll.options, list):
-            poll.options = []
-
-        if data['option_index'] < len(poll.options):
-            if 'votes' not in poll.options[data['option_index']]:
-                poll.options[data['option_index']]['votes'] = 0
-            poll.options[data['option_index']]['votes'] += 1
-
-    db.session.commit()
-    return jsonify({"status": "success"})
+# Remove duplicate poll functions since they're handled in app/api/polls.py
+# This avoids conflicts between the two implementations
 
 @api.route('/scorecards/officials', methods=['GET'])
 def get_officials():

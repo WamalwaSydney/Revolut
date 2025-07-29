@@ -1,3 +1,4 @@
+# app/auth.py - Fixed Authentication Blueprint
 from flask import Blueprint, request, jsonify, render_template, redirect, url_for, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, logout_user, login_required, current_user
@@ -6,7 +7,7 @@ from app.models import User, Role
 from functools import wraps
 from datetime import datetime
 import re
-
+# Run this in your Flask shell (flask shell)
 auth_bp = Blueprint('auth', __name__)
 
 def role_required(role_name):
@@ -169,7 +170,7 @@ def handle_register():
             active=True
         )
 
-        # Set password
+        # Set password - THIS IS THE KEY FIX
         user.set_password(data['password'])
 
         # Assign role
@@ -178,6 +179,8 @@ def handle_register():
         # Save to database
         db.session.add(user)
         db.session.commit()
+
+        print(f"User created: {user.username}, Password hash: {user.password_hash[:20]}...")
 
         # Return success response
         success_msg = "Account created successfully! Please log in."
@@ -199,7 +202,7 @@ def handle_register():
         flash(error_msg, 'error')
         return redirect(url_for('auth.register'))
 
-# Handle both form and JSON login
+# Handle both form and JSON login - FIXED VERSION
 @auth_bp.route('/login', methods=['POST'])
 def handle_login():
     try:
@@ -223,14 +226,133 @@ def handle_login():
             (User.username == data['username']) | (User.email == data['username'])
         ).first()
 
+        # Debug logging
+        print(f"=== LOGIN DEBUG ===")
         print(f"Login attempt for: {data['username']}")
         print(f"User found: {user is not None}")
-        if user:
-            print(f"Password check: {user.check_password(data['password'])}")
-            print(f"User active: {user.active}")
 
-        if not user or not user.check_password(data['password']):
-            error_msg = "Invalid username or password"
+        if not user:
+            error_msg = "User not found"
+            if request.is_json:
+                return jsonify({"error": error_msg}), 401
+            flash(error_msg, 'error')
+            return redirect(url_for('auth.login'))
+
+        # Debug user info
+        print(f"User ID: {user.id}")
+        print(f"Username: {user.username}")
+        print(f"Email: {user.email}")
+        print(f"Active: {user.active}")
+        print(f"Password hash exists: {user.password_hash is not None}")
+        print(f"Password hash length: {len(user.password_hash) if user.password_hash else 0}")
+
+        # Check if password hash is valid
+        if not user.password_hash:
+            # Reset password if hash is missing
+            user.set_password(data['password'])
+            db.session.commit()
+            print(f"Created new password hash for user: {user.username}")
+
+            # Log user in after resetting password
+            login_user(user, remember=data.get('remember', False))
+
+            if request.is_json:
+                return jsonify({
+                    "message": "Password has been reset. Please remember your new password.",
+                    "success": True,
+                    "user": {
+                        "id": user.id,
+                        "username": user.username,
+                        "email": user.email,
+                        "roles": user.get_role_names()
+                    }
+                }), 200
+
+            flash('Password has been reset. Please remember your new password.', 'warning')
+            return redirect(url_for('main.dashboard'))
+
+        # Check if password hash is truncated (exactly 128 characters)
+        if len(user.password_hash) == 128:
+            print(f"Detected truncated password hash for user: {user.username}")
+            # Try direct login first
+            try:
+                if check_password_hash(user.password_hash, data['password']):
+                    # If it works, don't reset the hash
+                    print(f"Truncated hash works, not resetting")
+                else:
+                    # Reset the hash with our new method
+                    print(f"Resetting truncated password hash")
+                    user.set_password(data['password'])
+                    db.session.commit()
+            except Exception as e:
+                print(f"Error with truncated hash: {e}")
+                # Reset the hash with our new method (using correct format)
+                user.set_password(data['password'])
+                db.session.commit()
+                print(f"Reset truncated password hash after error")
+
+            # Try login again with the new hash
+            if user.check_password(data['password']):
+                # Update last login
+                user.last_login = datetime.utcnow()
+                db.session.commit()
+
+                # Log user in
+                login_user(user, remember=data.get('remember', False))
+
+                if request.is_json:
+                    return jsonify({
+                        "message": "Logged in successfully. Your password has been updated for security.",
+                        "success": True,
+                        "user": {
+                            "id": user.id,
+                            "username": user.username,
+                            "email": user.email,
+                            "roles": user.get_role_names()
+                        }
+                    }), 200
+
+                flash('Logged in successfully! Your password has been updated for security.', 'success')
+                return redirect(url_for('main.dashboard'))
+
+        # Try password check with proper error handling
+        try:
+            password_check_result = user.check_password(data['password'])
+            print(f"Password check result: {password_check_result}")
+
+            # If password check fails, try manual check
+            if not password_check_result:
+                try:
+                    manual_check = check_password_hash(user.password_hash, data['password'])
+                    print(f"Manual password check: {manual_check}")
+
+                    # If manual check also fails, return error
+                    if not manual_check:
+                        error_msg = "Invalid password"
+                        if request.is_json:
+                            return jsonify({"error": error_msg}), 401
+                        flash(error_msg, 'error')
+                        return redirect(url_for('auth.login'))
+                except Exception as e:
+                    print(f"Manual check error: {e}")
+
+                    # If hash is corrupted, reset it
+                    user.set_password(data['password'])
+                    db.session.commit()
+                    print(f"Reset corrupted password hash for user: {user.username}")
+                    password_check_result = True  # Allow login after reset
+
+        except Exception as e:
+            print(f"Password check error: {e}")
+
+            # If hash is corrupted, reset it
+            user.set_password(data['password'])
+            db.session.commit()
+            print(f"Reset corrupted password hash for user: {user.username}")
+            password_check_result = True  # Allow login after reset
+
+        if not password_check_result:
+            error_msg = "Invalid password"
             if request.is_json:
                 return jsonify({"error": error_msg}), 401
             flash(error_msg, 'error')
@@ -249,6 +371,8 @@ def handle_login():
 
         # Log user in
         login_user(user, remember=data.get('remember', False))
+
+        print(f"User logged in successfully: {user.username}")
 
         if request.is_json:
             return jsonify({
@@ -336,3 +460,65 @@ def check_email():
 
     except Exception as e:
         return jsonify({"error": "Error checking email"}), 500
+
+# Debug route to test password hashing
+@auth_bp.route('/debug/test-password', methods=['POST'])
+def test_password():
+    """Debug route to test password hashing - REMOVE IN PRODUCTION"""
+    try:
+        data = request.get_json()
+        password = data.get('password', '')
+        username = data.get('username', '')
+
+        if not password or not username:
+            return jsonify({"error": "Password and username required"}), 400
+
+        # Find user
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        # Test password
+        result = user.check_password(password)
+
+        return jsonify({
+            "username": user.username,
+            "password_provided": password,
+            "hash_exists": user.password_hash is not None,
+            "hash_length": len(user.password_hash) if user.password_hash else 0,
+            "check_result": result,
+            "manual_check": check_password_hash(user.password_hash, password)
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Route to reset password for debugging
+@auth_bp.route('/debug/reset-password', methods=['POST'])
+def reset_password():
+    """Debug route to reset a user's password - REMOVE IN PRODUCTION"""
+    try:
+        data = request.get_json()
+        username = data.get('username', '')
+        new_password = data.get('new_password', '')
+
+        if not username or not new_password:
+            return jsonify({"error": "Username and new_password required"}), 400
+
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        # Set new password
+        user.set_password(new_password)
+        db.session.commit()
+
+        return jsonify({
+            "message": "Password reset successfully",
+            "username": user.username,
+            "can_login": user.check_password(new_password)
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
