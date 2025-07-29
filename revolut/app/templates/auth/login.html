@@ -57,9 +57,6 @@
 {% block extra_js %}
 <script>
 document.getElementById('loginForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-
-    const formData = new FormData(this);
     const submitBtn = this.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
 
@@ -67,26 +64,8 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
     submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Signing in...';
     submitBtn.disabled = true;
 
-    fetch(this.action, {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => {
-        if (response.redirected) {
-            window.location.href = response.url;
-        } else if (response.ok) {
-            window.location.href = '/dashboard';
-        } else {
-            return response.text().then(text => {
-                throw new Error(text);
-            });
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-    });
+    // Let the form submit normally instead of preventing default
+    // The Flask redirect will handle the navigation
 });
 </script>
 {% endblock %}

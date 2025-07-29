@@ -34,6 +34,31 @@ def polls():
 def scorecards():
     return render_template('scorecards.html')
 
+@main.route('/api/dashboard-data')
+def dashboard_data():
+    """Get dashboard data"""
+    from app.models import Poll, UserFeedback, Issue, Official
+    
+    try:
+        # Get basic statistics
+        total_polls = Poll.query.count()
+        total_feedback = UserFeedback.query.count()
+        total_issues = Issue.query.count()
+        total_officials = Official.query.count()
+        
+        return jsonify({
+            'stats': {
+                'total_polls': total_polls,
+                'total_feedback': total_feedback,
+                'total_issues': total_issues,
+                'total_officials': total_officials
+            },
+            'recent_activity': []
+        })
+    except Exception as e:
+        logger.error(f"Dashboard data error: {str(e)}")
+        return jsonify({'error': 'Failed to load dashboard data'}), 500
+
 @main.route('/at/ussd', methods=['POST'])
 def ussd_callback():
     """Handle USSD callback from Africa's Talking"""
