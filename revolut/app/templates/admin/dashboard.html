@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revolut & WDO - Admin Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/chart.js/3.9.1/chart.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #06b6d4;
+            --dark-color: #1f2937;
+            --light-color: #f8fafc;
+            --border-color: #e5e7eb;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            height: calc(100vh - 2rem);
+            position: sticky;
+            top: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .main-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            min-height: calc(100vh - 2rem);
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .nav-link {
+            border-radius: 12px;
+            margin: 0.25rem 0;
+            transition: all 0.3s ease;
+            color: var(--dark-color);
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: linear-gradient(135deg, var(--primary-color), #3b82f6);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card {
+            border-radius: 20px;
+            padding: 1.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--info-color));
+        }
+
+        .btn {
+            border-radius: 12px;
+            padding: 0.625rem 1.25rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), #3b82f6);
+            border: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+            border: none;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning-color), #d97706);
+            border: none;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger-color), #dc2626);
+            border: none;
+        }
+
+        .table {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table thead th {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            border: none;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+
+        .badge {
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+        }
+
+        .modal-content {
+            border-radius: 20px;
+            border: none;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .form-control, .form-select {
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
+        }
+
+        .alert {
+            border-radius: 12px;
+            border: none;
+        }
+
+        .progress {
+            height: 8px;
+            border-radius: 4px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 16px;
+            padding: 1rem;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid p-3">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-lg-2">
+                <div class="sidebar p-3">
+                    <div class="text-center mb-4">
+                        <h5 class="text-primary fw-bold">Revolut & WDO</h5>
+                        <small class="text-muted">Admin Dashboard</small>
+                    </div>
+
+                    <nav class="nav flex-column">
+                        <a class="nav-link active" href="#dashboard" data-section="dashboard">
+                            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                        </a>
+                        <a class="nav-link" href="#users" data-section="users">
+                            <i class="bi bi-people me-2"></i>Users
+                        </a>
+                        <a class="nav-link" href="#polls" data-section="polls">
+                            <i class="bi bi-bar-chart me-2"></i>Polls
+                        </a>
+                        <a class="nav-link" href="#feedback" data-section="feedback">
+                            <i class="bi bi-chat-left-text me-2"></i>Feedback
+                        </a>
+                        <a class="nav-link" href="#officials" data-section="officials">
+                            <i class="bi bi-person-badge me-2"></i>Officials
+                        </a>
+                        <a class="nav-link" href="#analytics" data-section="analytics">
+                            <i class="bi bi-graph-up me-2"></i>Analytics
+                        </a>
+                        <a class="nav-link" href="#settings" data-section="settings">
+                            <i class="bi bi-gear me-2"></i>Settings
+                        </a>
+                    </nav>
+
+                    <div class="mt-auto pt-4">
+                        <div class="d-grid">
+                            <button class="btn btn-outline-danger btn-sm" onclick="logout()">
+                                <i class="bi bi-box-arrow-right me-2"></i>Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-lg-10">
+                <div class="main-content p-4">
+
+                    <!-- Dashboard Section -->
+                    <div id="dashboard-section" class="content-section">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2 class="text-dark fw-bold">Dashboard Overview</h2>
+                            <button class="btn btn-primary" onclick="refreshDashboard()">
+                                <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+                            </button>
+                        </div>
+
+                        <!-- Stats Cards -->
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <div class="card stat-card bg-primary text-white">
+                                    <h3 id="total-users" class="mb-1">-</h3>
+                                    <p class="mb-0">Total Users</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card stat-card bg-success text-white">
+                                    <h3 id="active-polls" class="mb-1">-</h3>
+                                    <p class="mb-0">Active Polls</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card stat-card bg-warning text-white">
+                                    <h3 id="feedback-count" class="mb-1">-</h3>
+                                    <p class="mb-0">Feedback Items</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card stat-card bg-info text-white">
+                                    <h3 id="officials-count" class="mb-1">-</h3>
+                                    <p class="mb-0">Officials</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Charts Row -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5>Feedback Sentiment Trends</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="chart-container">
+                                            <canvas id="sentimentChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5>User Engagement</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="chart-container">
+                                            <canvas id="engagementChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activity -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Recent Activity</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="recent-activity" class="list-group list-group-flush">
+                                    <!-- Activity items will be loaded here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Users Section -->
+                    <div id="users-section" class="content-section" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2 class="text-dark fw-bold">User Management</h2>
+                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                                <i class="bi bi-person-plus me-2"></i>Add User
+                            </button>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="users-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Username</th>
+                                                <th>Email</th>
+                                                <th>Roles</th>
+                                                <th>Status</th>
+                                                <th>Last Login</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Users will be loaded here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Polls Section -->
+                    <div id="polls-section" class="content-section" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2 class="text-dark fw-bold">Poll Management</h2>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPollModal">
+                                <i class="bi bi-plus-circle me-2"></i>Create Poll
+                            </button>
+                        </div>
+
+                        <div class="row" id="polls-grid">
+                            <!-- Polls will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Feedback Section -->
+                    <div id="feedback-section" class="content-section" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2 class="text-dark fw-bold">Feedback Management</h2>
+                            <div class="btn-group">
+                                <button class="btn btn-outline-primary" onclick="filterFeedback('all')">All</button>
+                                <button class="btn btn-outline-success" onclick="filterFeedback('positive')">Positive</button>
+                                <button class="btn btn-outline-warning" onclick="filterFeedback('neutral')">Neutral</button>
+                                <button class="btn btn-outline-danger" onclick="filterFeedback('negative')">Negative</button>
+                            </div>
+                        </div>
+
+                        <div id="feedback-list">
+                            <!-- Feedback items will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Officials Section -->
+                    <div id="officials-section" class="content-section" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2 class="text-dark fw-bold">Officials Management</h2>
+                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addOfficialModal">
+                                <i class="bi bi-person-plus me-2"></i>Add Official
+                            </button>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover" id="officials-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Position</th>
+                                                <th>Constituency</th>
+                                                <th>Average Rating</th>
+                                                <th>Total Ratings</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Officials will be loaded here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analytics Section -->
+                    <div id="analytics-section" class="content-section" style="display: none;">
+                        <h2 class="text-dark fw-bold mb-4">Analytics & Reports</h2>
+
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-graph-up text-primary" style="font-size: 2rem;"></i>
+                                        <h5 class="mt-3">Engagement Rate</h5>
+                                        <h3 class="text-primary" id="engagement-rate">-</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-heart text-success" style="font-size: 2rem;"></i>
+                                        <h5 class="mt-3">Satisfaction Score</h5>
+                                        <h3 class="text-success" id="satisfaction-score">-</h3>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-arrow-up-right text-info" style="font-size: 2rem;"></i>
+                                        <h5 class="mt-3">Growth Rate</h5>
+                                        <h3 class="text-info" id="growth-rate">-</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h5>Detailed Analytics</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="analyticsChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings Section -->
+                    <div id="settings-section" class="content-section" style="display: none;">
+                        <h2 class="text-dark fw-bold mb-4">System Settings</h2>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5>General Settings</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="general-settings-form">
+                                            <div class="mb-3">
+                                                <label class="form-label">System Name</label>
+                                                <input type="text" class="form-control" value="Revolut & WDO">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Default Language</label>
+                                                <select class="form-select">
+                                                    <option value="en">English</option>
+                                                    <option value="sw">Swahili</option>
+                                                </select>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5>SMS Configuration</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="sms-settings-form">
+                                            <div class="mb-3">
+                                                <label class="form-label">Africa's Talking Username</label>
+                                                <input type="text" class="form-control" placeholder="Your AT username">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">API Key</label>
+                                                <input type="password" class="form-control" placeholder="Your API key">
+                                            </div>
+                                            <button type="submit" class="btn btn-success">Update SMS Settings</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Create Poll Modal -->
+    <div class="modal fade" id="createPollModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Poll</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="create-poll-form">
+                        <div class="mb-3">
+                            <label class="form-label">Poll Question</label>
+                            <textarea class="form-control" name="question" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Options</label>
+                            <div id="poll-options">
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control poll-option" placeholder="Option 1" required>
+                                    <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                                <div class="input-group mb-2">
+                                    <input type="text" class="form-control poll-option" placeholder="Option 2" required>
+                                    <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="addOption()">
+                                <i class="bi bi-plus"></i> Add Option
+                            </button>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Duration (days)</label>
+                            <input type="number" class="form-control" name="duration_days" value="7" min="1" max="30">
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="notify_citizens" id="notify-citizens">
+                            <label class="form-check-label" for="notify-citizens">
+                                Send SMS notifications to citizens
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="createPoll()">Create Poll</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add User Modal -->
+    <div class="modal fade" id="addUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="add-user-form">
+                        <div class="mb-3">
+                            <label class="form-label">Username</label>
+                            <input type="text" class="form-control" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" class="form-control" name="password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Role</label>
+                            <select class="form-select" name="role" required>
+                                <option value="">Select Role</option>
+                                <option value="admin">Admin</option>
+                                <option value="cso">CSO</option>
+                                <option value="citizen">Citizen</option>
+                                <option value="official">Official</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="addUser()">Add User</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Official Modal -->
+    <div class="modal fade" id="addOfficialModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Official</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="add-official-form">
+                        <div class="mb-3">
+                            <label class="form-label">Name</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Position</label>
+                            <input type="text" class="form-control" name="position" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Constituency</label>
+                            <input type="text" class="form-control" name="constituency" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Department</label>
+                            <input type="text" class="form-control" name="department">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="addOfficial()">Add Official</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+    <script>
+        // Global variables
+        let charts = {};
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+        // Initialize the dashboard after Chart.js is confirmed loaded
+        waitForChartJs().then(() => {
+            initializeDashboard();
+            setupNavigation();
+            loadDashboardData();
+        });
+    });
+
+        function waitForChartJs() {
+            return new Promise((resolve) => {
+                if (typeof Chart !== 'undefined') {
+                    resolve();
+                } else {
+                    setTimeout(() => waitForChartJs().then(resolve), 100);
+                }
+            });
+        }
+
+        function initializeDashboard() {
+            // Show dashboard section by default
+            showSection('dashboard');
+        }
+
+        function setupNavigation() {
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+
+                    // Update active nav
+                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // Show corresponding section
+                    const section = this.getAttribute('data-section');
+                    showSection(section);
+                });
+            });
+        }
+
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none';
+            });
+
+            // Show selected section
+            const targetSection = document.getElementById(sectionName + '-section');
+            if (targetSection) {
+                targetSection.style.display = 'block';
+                targetSection.classList.add('fade-in');
+
+                // Load section-specific data
+                loadSectionData(sectionName);
+            }
+
+            // Close any open modals when switching sections
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                const modalInstance = bootstrap.Modal.getInstance(modal);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            });
+        }
+
+        function loadSectionData(section) {
+            switch(section) {
+                case 'dashboard':
+                    loadDashboardData();
+                    break;
+                case 'users':
+                    loadUsers();
+                    break;
+                case 'polls':
+                    loadPolls();
+                    break;
+                case 'feedback':
+                    loadFeedback();
+                    break;
+                case 'officials':
+                    loadOfficials();
+                    break;
+                case 'analytics':
+                    loadAnalytics();
+                    break;
+            }
+        }
+
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('/api/dashboard-data');
+                const data = await response.json();
+
+                updateDashboardStats(data);
+                updateCharts(data);
+                updateRecentActivity(data);
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                showAlert('Error loading dashboard data', 'danger');
+            }
+        }
+
+        function updateDashboardStats(data) {
+            // Update statistics cards
+            document.getElementById('total-users').textContent = data.total_users || '0';
+            document.getElementById('active-polls').textContent = data.active_polls?.length || '0';
+            document.getElementById('feedback-count').textContent = data.feedback_stats?.reduce((sum, item) => sum + item.count, 0) || '0';
+            document.getElementById('officials-count').textContent = data.officials_count || '0';
+        }
+
+        function updateCharts(data) {
+            // Sentiment Chart
+            const sentimentCtx = document.getElementById('sentimentChart');
+            if (sentimentCtx && data.feedback_stats) {
+                if (charts.sentiment) charts.sentiment.destroy();
+
+                charts.sentiment = new Chart(sentimentCtx, {
+                    type: 'line',
+                    data: {
+                        labels: data.feedback_stats.map(item => item.location),
+                        datasets: [{
+                            label: 'Average Sentiment',
+                            data: data.feedback_stats.map(item => item.avg_sentiment),
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                min: -1,
+                                max: 1
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Engagement Chart (Doughnut)
+            const engagementCtx = document.getElementById('engagementChart');
+            if (engagementCtx && data.active_polls) {
+                if (charts.engagement) charts.engagement.destroy();
+
+                const totalVotes = data.active_polls.reduce((sum, poll) => {
+                    return sum + poll.options.reduce((optSum, opt) => optSum + (opt.votes || 0), 0);
+                }, 0);
+
+                charts.engagement = new Chart(engagementCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Active Users', 'Inactive Users'],
+                        datasets: [{
+                            data: [totalVotes, Math.max(0, (data.total_users || 100) - totalVotes)],
+                            backgroundColor: ['#10b981', '#f3f4f6'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function updateRecentActivity(data) {
+            const activityContainer = document.getElementById('recent-activity');
+            const activities = [
+                { text: `${data.active_polls?.length || 0} active polls`, icon: 'bi-bar-chart', time: '2 minutes ago', type: 'info' },
+                { text: `New feedback received`, icon: 'bi-chat-left-text', time: '5 minutes ago', type: 'success' },
+                { text: `Poll created successfully`, icon: 'bi-plus-circle', time: '15 minutes ago', type: 'primary' },
+                { text: `System backup completed`, icon: 'bi-shield-check', time: '1 hour ago', type: 'success' }
+            ];
+
+            activityContainer.innerHTML = activities.map(activity => `
+                <div class="list-group-item border-0 d-flex align-items-center">
+                    <div class="me-3">
+                        <div class="bg-${activity.type} text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <i class="bi ${activity.icon}"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-medium">${activity.text}</div>
+                        <small class="text-muted">${activity.time}</small>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadUsers() {
+            try {
+                const response = await fetch('/admin/users');
+                const users = await response.json();
+
+                const tbody = document.querySelector('#users-table tbody');
+                tbody.innerHTML = users.map(user => `
+                    <tr>
+                        <td>${user.username}</td>
+                        <td>${user.email}</td>
+                        <td>
+                            ${user.roles.map(role => `<span class="badge bg-primary me-1">${role}</span>`).join('')}
+                        </td>
+                        <td>
+                            <span class="badge bg-success">Active</span>
+                        </td>
+                        <td>${user.last_login || 'Never'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-2" onclick="editUser(${user.id})">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${user.id})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading users:', error);
+                showAlert('Error loading users', 'danger');
+            }
+        }
+
+        async function loadPolls() {
+            try {
+                const response = await fetch('/api/polls/results');
+                const data = await response.json();
+
+                const pollsGrid = document.getElementById('polls-grid');
+                pollsGrid.innerHTML = data.polls.map(poll => `
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">${poll.question}</h6>
+                                <span class="badge bg-${poll.is_active ? 'success' : 'secondary'}">${poll.status}</span>
+                            </div>
+                            <div class="card-body">
+                                ${poll.options.map(option => `
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between mb-1">
+                                            <span>${option.text}</span>
+                                            <span class="text-muted">${option.votes} votes (${option.percentage}%)</span>
+                                        </div>
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar" role="progressbar" style="width: ${option.percentage}%"></div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                                <div class="mt-3">
+                                    <small class="text-muted">
+                                        Total votes: ${poll.total_votes} |
+                                        Created: ${new Date(poll.created_at).toLocaleDateString()}
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <button class="btn btn-sm btn-outline-primary me-2" onclick="editPoll(${poll.id})">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deletePoll(${poll.id})">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading polls:', error);
+                showAlert('Error loading polls', 'danger');
+            }
+        }
+
+        async function loadFeedback() {
+            try {
+                const response = await fetch('/api/feedback');
+                const feedback = await response.json();
+
+                const feedbackList = document.getElementById('feedback-list');
+                feedbackList.innerHTML = feedback.map(item => `
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <span class="badge bg-${getSentimentColor(item.sentiment_score)}">${getSentimentLabel(item.sentiment_score)}</span>
+                                    <span class="badge bg-info ms-2">${item.location || 'Unknown Location'}</span>
+                                </div>
+                                <small class="text-muted">${new Date(item.created_at).toLocaleString()}</small>
+                            </div>
+                            <p class="mb-2">${item.content}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    Language: ${item.language || 'en'} |
+                                    Source: ${item.source || 'web'}
+                                </small>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="viewFeedback(${item.id})">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-success" onclick="respondToFeedback(${item.id})">
+                                        <i class="bi bi-reply"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading feedback:', error);
+                showAlert('Error loading feedback', 'danger');
+            }
+        }
+
+        async function loadOfficials() {
+            try {
+                const response = await fetch('/api/scorecards/officials');
+                const data = await response.json();
+
+                // Flatten officials from grouped data
+                const officials = [];
+                Object.values(data.officials).forEach(group => {
+                    officials.push(...group);
+                });
+
+                const tbody = document.querySelector('#officials-table tbody');
+                tbody.innerHTML = officials.map(official => `
+                    <tr>
+                        <td>${official.name}</td>
+                        <td>${official.position || 'N/A'}</td>
+                        <td>${official.constituency || 'N/A'}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <span class="me-2">${official.average_score ? official.average_score.toFixed(1) : 'N/A'}</span>
+                                ${official.average_score ? generateStarRating(official.average_score) : ''}
+                            </div>
+                        </td>
+                        <td>${official.rating_count || 0}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-2" onclick="editOfficial(${official.id})">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-info me-2" onclick="viewOfficialDetails(${official.id})">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteOfficial(${official.id})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading officials:', error);
+                showAlert('Error loading officials', 'danger');
+            }
+        }
+
+        async function loadAnalytics() {
+            try {
+                // Simulate analytics data
+                document.getElementById('engagement-rate').textContent = '73.5%';
+                document.getElementById('satisfaction-score').textContent = '4.2/5';
+                document.getElementById('growth-rate').textContent = '+12.3%';
+
+                // Analytics Chart
+                const analyticsCtx = document.getElementById('analyticsChart');
+                if (analyticsCtx) {
+                    if (charts.analytics) charts.analytics.destroy();
+
+                    charts.analytics = new Chart(analyticsCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                            datasets: [{
+                                label: 'User Engagement',
+                                data: [65, 59, 80, 81, 56, 75],
+                                backgroundColor: 'rgba(37, 99, 235, 0.8)',
+                                borderColor: '#2563eb',
+                                borderWidth: 1
+                            }, {
+                                label: 'Feedback Volume',
+                                data: [45, 39, 60, 71, 46, 65],
+                                backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                                borderColor: '#10b981',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+                showAlert('Error loading analytics', 'danger');
+            }
+        }
+
+        // Utility functions
+        function getSentimentColor(score) {
+            if (score > 0.1) return 'success';
+            if (score < -0.1) return 'danger';
+            return 'warning';
+        }
+
+        function getSentimentLabel(score) {
+            if (score > 0.1) return 'Positive';
+            if (score < -0.1) return 'Negative';
+            return 'Neutral';
+        }
+
+        function generateStarRating(rating) {
+            const fullStars = Math.floor(rating);
+            const halfStar = rating % 1 >= 0.5;
+            let stars = '';
+
+            for (let i = 0; i < fullStars; i++) {
+                stars += '<i class="bi bi-star-fill text-warning"></i>';
+            }
+            if (halfStar) {
+                stars += '<i class="bi bi-star-half text-warning"></i>';
+            }
+            for (let i = fullStars + (halfStar ? 1 : 0); i < 5; i++) {
+                stars += '<i class="bi bi-star text-muted"></i>';
+            }
+
+            return stars;
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+
+        // Poll management functions
+        function addOption() {
+            const optionsContainer = document.getElementById('poll-options');
+            const optionCount = optionsContainer.children.length + 1;
+
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'input-group mb-2';
+            optionDiv.innerHTML = `
+                <input type="text" class="form-control poll-option" placeholder="Option ${optionCount}" required>
+                <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">
+                    <i class="bi bi-trash"></i>
+                </button>
+            `;
+
+            optionsContainer.appendChild(optionDiv);
+        }
+
+        function removeOption(button) {
+            const optionsContainer = document.getElementById('poll-options');
+            if (optionsContainer.children.length > 2) {
+                button.parentElement.remove();
+            } else {
+                showAlert('A poll must have at least 2 options', 'warning');
+            }
+        }
+
+        async function createPoll() {
+            const form = document.getElementById('create-poll-form');
+            const formData = new FormData(form);
+
+            const options = Array.from(document.querySelectorAll('.poll-option'))
+                .map(input => input.value.trim())
+                .filter(value => value.length > 0);
+
+            if (options.length < 2) {
+                showAlert('Please provide at least 2 options', 'warning');
+                return;
+            }
+
+            const pollData = {
+                question: formData.get('question'),
+                options: options,
+                duration_days: parseInt(formData.get('duration_days')),
+                notify_citizens: formData.get('notify_citizens') === 'on'
+            };
+
+            try {
+                const response = await fetch('/api/polls', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(pollData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert('Poll created successfully!', 'success');
+                    form.reset();
+                    bootstrap.Modal.getInstance(document.getElementById('createPollModal')).hide();
+                    if (document.getElementById('polls-section').style.display !== 'none') {
+                        loadPolls();
+                    }
+                } else {
+                    showAlert(result.error || 'Failed to create poll', 'danger');
+                }
+            } catch (error) {
+                console.error('Error creating poll:', error);
+                showAlert('Error creating poll', 'danger');
+            }
+        }
+
+        async function addUser() {
+            const form = document.getElementById('add-user-form');
+            const formData = new FormData(form);
+
+            const userData = {
+                username: formData.get('username'),
+                email: formData.get('email'),
+                password: formData.get('password'),
+                role: formData.get('role'),
+                terms: true
+            };
+
+            try {
+                const response = await fetch('/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert('User created successfully!', 'success');
+                    form.reset();
+                    bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
+                    if (document.getElementById('users-section').style.display !== 'none') {
+                        loadUsers();
+                    }
+                } else {
+                    showAlert(result.error || 'Failed to create user', 'danger');
+                }
+            } catch (error) {
+                console.error('Error creating user:', error);
+                showAlert('Error creating user', 'danger');
+            }
+        }
+
+        async function addOfficial() {
+            const form = document.getElementById('add-official-form');
+            const formData = new FormData(form);
+
+            const officialData = {
+                name: formData.get('name'),
+                position: formData.get('position'),
+                constituency: formData.get('constituency'),
+                department: formData.get('department')
+            };
+
+            try {
+                const response = await fetch('/admin/officials', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(officialData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert('Official added successfully!', 'success');
+                    form.reset();
+                    bootstrap.Modal.getInstance(document.getElementById('addOfficialModal')).hide();
+                    if (document.getElementById('officials-section').style.display !== 'none') {
+                        loadOfficials();
+                    }
+                } else {
+                    showAlert(result.error || 'Failed to add official', 'danger');
+                }
+            } catch (error) {
+                console.error('Error adding official:', error);
+                showAlert('Error adding official', 'danger');
+            }
+        }
+
+        function refreshDashboard() {
+            const button = event.target;
+            const originalHtml = button.innerHTML;
+
+            button.innerHTML = '<span class="loading"></span> Refreshing...';
+            button.disabled = true;
+
+            loadDashboardData().finally(() => {
+                button.innerHTML = originalHtml;
+                button.disabled = false;
+                showAlert('Dashboard refreshed successfully!', 'success');
+            });
+        }
+
+        function filterFeedback(type) {
+            // Update active filter button
+            document.querySelectorAll('#feedback-section .btn-group .btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Filter feedback items (implementation depends on your needs)
+            console.log('Filtering feedback by:', type);
+            loadFeedback(); // Reload with filter
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = '/auth/logout';
+            }
+        }
+
+        // Placeholder functions for CRUD operations
+        function editUser(userId) {
+            console.log('Edit user:', userId);
+            showAlert('Edit user functionality coming soon!', 'info');
+        }
+
+        function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                console.log('Delete user:', userId);
+                showAlert('Delete user functionality coming soon!', 'info');
+            }
+        }
+
+        function editPoll(pollId) {
+            console.log('Edit poll:', pollId);
+            showAlert('Edit poll functionality coming soon!', 'info');
+        }
+
+        function deletePoll(pollId) {
+            if (confirm('Are you sure you want to delete this poll?')) {
+                console.log('Delete poll:', pollId);
+                showAlert('Delete poll functionality coming soon!', 'info');
+            }
+        }
+
+        function editOfficial(officialId) {
+            console.log('Edit official:', officialId);
+            showAlert('Edit official functionality coming soon!', 'info');
+        }
+
+        function viewOfficialDetails(officialId) {
+            console.log('View official details:', officialId);
+            showAlert('View official details functionality coming soon!', 'info');
+        }
+
+        function deleteOfficial(officialId) {
+            if (confirm('Are you sure you want to delete this official?')) {
+                console.log('Delete official:', officialId);
+                showAlert('Delete official functionality coming soon!', 'info');
+            }
+        }
+
+        function viewFeedback(feedbackId) {
+            console.log('View feedback:', feedbackId);
+            showAlert('View feedback details functionality coming soon!', 'info');
+        }
+
+        function respondToFeedback(feedbackId) {
+            console.log('Respond to feedback:', feedbackId);
+            showAlert('Respond to feedback functionality coming soon!', 'info');
+        }
+    </script>
+</body>
+</html>

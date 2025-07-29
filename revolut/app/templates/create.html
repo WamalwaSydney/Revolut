@@ -1,0 +1,738 @@
+<!-- templates/polls/create.html - Poll Creation Form -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Poll - Revolut & WDO</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.10.2/cdn.js" defer></script>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen py-8">
+        <div class="max-w-4xl mx-auto px-4">
+            <!-- Header -->
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <h1 class="text-3xl font-bold text-gray-900">Create New Poll</h1>
+                <p class="text-gray-600 mt-2">Engage citizens by creating polls on important civic issues</p>
+            </div>
+
+            <!-- Poll Creation Form -->
+            <div class="bg-white rounded-lg shadow-sm p-6" x-data="pollCreator()">
+                <form @submit.prevent="createPoll()">
+                    <!-- Poll Question -->
+                    <div class="mb-6">
+                        <label for="question" class="block text-sm font-medium text-gray-700 mb-2">
+                            Poll Question *
+                        </label>
+                        <textarea
+                            id="question"
+                            x-model="formData.question"
+                            class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            rows="3"
+                            placeholder="What would you like to ask citizens about?"
+                            maxlength="500"
+                            required
+                        ></textarea>
+                        <div class="flex justify-between text-sm text-gray-500 mt-1">
+                            <span x-show="formData.question.length < 10" class="text-red-500">
+                                Minimum 10 characters required
+                            </span>
+                            <span x-text="`${formData.question.length}/500 characters`"></span>
+                        </div>
+                    </div>
+
+                    <!-- Poll Options -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Poll Options *
+                        </label>
+
+                        <template x-for="(option, index) in formData.options" :key="index">
+                            <div class="flex gap-2 mb-3">
+                                <div class="flex-1">
+                                    <input
+                                        type="text"
+                                        x-model="formData.options[index]"
+                                        class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        :placeholder="`Option ${index + 1}`"
+                                        maxlength="100"
+                                        required
+                                    />
+                                </div>
+                                <button
+                                    type="button"
+                                    @click="removeOption(index)"
+                                    x-show="formData.options.length > 2"
+                                    class="px-3 py-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                                >
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </template>
+
+                        <button
+                            type="button"
+                            @click="addOption()"
+                            x-show="formData.options.length < 6"
+                            class="w-full p-3 border-2 border-dashed border-gray-300 rounded-md text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors"
+                        >
+                            + Add Option
+                        </button>
+
+                        <p class="text-sm text-gray-500 mt-2">
+                            Add 2-6 options for citizens to choose from
+                        </p>
+                    </div>
+
+                    <!-- Poll Duration -->
+                    <div class="mb-6">
+                        <label for="duration" class="block text-sm font-medium text-gray-700 mb-2">
+                            Poll Duration
+                        </label>
+                        <select
+                            id="duration"
+                            x-model="formData.duration_days"
+                            class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="1">1 Day</option>
+                            <option value="3">3 Days</option>
+                            <option value="7" selected>1 Week</option>
+                            <option value="14">2 Weeks</option>
+                            <option value="30">1 Month</option>
+                        </select>
+                    </div>
+
+                    <!-- Notification Settings -->
+                    <div class="mb-6">
+                        <div class="flex items-center">
+                            <input
+                                type="checkbox"
+                                id="notify"
+                                x-model="formData.notify_citizens"
+                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            />
+                            <label for="notify" class="ml-2 block text-sm text-gray-700">
+                                Send SMS notifications to registered citizens
+                            </label>
+                        </div>
+                        <p class="text-sm text-gray-500 mt-1 ml-6">
+                            Citizens will receive an SMS about this new poll
+                        </p>
+                    </div>
+
+                    <!-- Preview Section -->
+                    <div class="mb-6 p-4 bg-gray-50 rounded-lg" x-show="formData.question.length > 0">
+                        <h3 class="font-medium text-gray-900 mb-3">Poll Preview</h3>
+                        <div class="bg-white p-4 rounded border">
+                            <h4 class="font-medium mb-3" x-text="formData.question"></h4>
+                            <template x-for="(option, index) in formData.options.filter(opt => opt.trim())" :key="index">
+                                <div class="flex items-center mb-2">
+                                    <input type="radio" :name="`preview-${Math.random()}`" class="mr-2" disabled>
+                                    <span x-text="option"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex gap-4">
+                        <button
+                            type="submit"
+                            :disabled="!isFormValid() || isSubmitting"
+                            class="flex-1 bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            <span x-show="!isSubmitting">Create Poll</span>
+                            <span x-show="isSubmitting" class="flex items-center justify-center">
+                                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Creating Poll...
+                            </span>
+                        </button>
+
+                        <button
+                            type="button"
+                            @click="window.history.back()"
+                            class="px-6 py-3 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Success/Error Messages -->
+                <div x-show="message" class="mt-4 p-4 rounded-md" :class="messageType === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'">
+                    <p x-text="message"></p>
+                    <div x-show="messageType === 'success'" class="mt-2">
+                        <a href="/polls" class="text-green-600 hover:text-green-800 font-medium">View All Polls →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function pollCreator() {
+            return {
+                formData: {
+                    question: '',
+                    options: ['', ''],
+                    duration_days: 7,
+                    notify_citizens: true
+                },
+                isSubmitting: false,
+                message: '',
+                messageType: '',
+
+                addOption() {
+                    if (this.formData.options.length < 6) {
+                        this.formData.options.push('');
+                    }
+                },
+
+                removeOption(index) {
+                    if (this.formData.options.length > 2) {
+                        this.formData.options.splice(index, 1);
+                    }
+                },
+
+                isFormValid() {
+                    const validOptions = this.formData.options.filter(opt => opt.trim()).length;
+                    return this.formData.question.length >= 10 && validOptions >= 2;
+                },
+
+                async createPoll() {
+                    if (!this.isFormValid()) return;
+
+                    this.isSubmitting = true;
+                    this.message = '';
+
+                    try {
+                        // Filter out empty options
+                        const cleanedOptions = this.formData.options.filter(opt => opt.trim());
+
+                        const response = await fetch('/api/polls', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': this.getCsrfToken()
+                            },
+                            body: JSON.stringify({
+                                ...this.formData,
+                                options: cleanedOptions
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            this.message = 'Poll created successfully!';
+                            this.messageType = 'success';
+
+                            // Reset form after successful creation
+                            setTimeout(() => {
+                                this.formData = {
+                                    question: '',
+                                    options: ['', ''],
+                                    duration_days: 7,
+                                    notify_citizens: true
+                                };
+                            }, 2000);
+                        } else {
+                            this.message = data.errors ? data.errors.join(', ') : data.error || 'Failed to create poll';
+                            this.messageType = 'error';
+                        }
+                    } catch (error) {
+                        this.message = 'Network error. Please try again.';
+                        this.messageType = 'error';
+                    } finally {
+                        this.isSubmitting = false;
+                    }
+                },
+
+                getCsrfToken() {
+                    const token = document.querySelector('meta[name="csrf-token"]');
+                    return token ? token.getAttribute('content') : '';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
+
+<!-- templates/polls/list.html - Poll Management Dashboard -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poll Management - Revolut & WDO</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.10.2/cdn.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen py-8" x-data="pollManager()">
+        <div class="max-w-7xl mx-auto px-4">
+            <!-- Header -->
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900">Poll Management</h1>
+                        <p class="text-gray-600 mt-2">Manage and monitor citizen polls</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <button
+                            @click="refreshPolls()"
+                            class="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-colors"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                        </button>
+                        <a
+                            href="/polls/create"
+                            class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                        >
+                            Create New Poll
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-blue-100 rounded-lg">
+                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Active Polls</p>
+                            <p class="text-2xl font-semibold text-gray-900" x-text="stats.active_count || 0"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-green-100 rounded-lg">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Total Votes</p>
+                            <p class="text-2xl font-semibold text-gray-900" x-text="stats.total_votes || 0"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-yellow-100 rounded-lg">
+                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Expiring Soon</p>
+                            <p class="text-2xl font-semibold text-gray-900" x-text="stats.expiring_soon || 0"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-purple-100 rounded-lg">
+                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Completed</p>
+                            <p class="text-2xl font-semibold text-gray-900" x-text="stats.completed_count || 0"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                <div class="flex flex-wrap gap-4 items-center">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select
+                            x-model="filters.status"
+                            @change="filterPolls()"
+                            class="border border-gray-300 rounded-md px-3 py-2 text-sm"
+                        >
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="expired">Expired</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+                        <select
+                            x-model="filters.sortBy"
+                            @change="filterPolls()"
+                            class="border border-gray-300 rounded-md px-3 py-2 text-sm"
+                        >
+                            <option value="created_at">Date Created</option>
+                            <option value="total_votes">Total Votes</option>
+                            <option value="expires_at">Expiry Date</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                        <input
+                            type="text"
+                            x-model="filters.search"
+                            @input="debounceFilter()"
+                            placeholder="Search polls..."
+                            class="border border-gray-300 rounded-md px-3 py-2 text-sm w-64"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Polls List -->
+            <div class="space-y-6">
+                <template x-for="poll in filteredPolls" :key="poll.id">
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                        <div class="p-6">
+                            <!-- Poll Header -->
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="flex-1">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-2" x-text="poll.question"></h3>
+                                    <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                        <span x-text="`Created: ${formatDate(poll.created_at)}`"></span>
+                                        <span x-text="`Expires: ${formatDate(poll.expires_at)}`"></span>
+                                        <span
+                                            class="px-2 py-1 rounded-full text-xs font-medium"
+                                            :class="poll.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
+                                            x-text="poll.is_active ? 'Active' : 'Expired'"
+                                        ></span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center space-x-2">
+                                    <button
+                                        @click="showPollDetails(poll)"
+                                        class="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                    >
+                                        View Details
+                                    </button>
+                                    <button
+                                        @click="exportPollResults(poll.id)"
+                                        class="text-gray-600 hover:text-gray-800 text-sm"
+                                    >
+                                        Export
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Poll Results -->
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm font-medium text-gray-700">Total Votes: <span x-text="poll.total_votes"></span></span>
+                                    <span class="text-sm text-gray-500" x-text="`${poll.days_remaining >= 0 ? poll.days_remaining + ' days left' : 'Expired'}`"></span>
+                                </div>
+
+                                <template x-for="option in poll.options" :key="option.id">
+                                    <div class="space-y-1">
+                                        <div class="flex justify-between text-sm">
+                                            <span x-text="option.text"></span>
+                                            <span x-text="`${option.votes} votes (${option.percentage}%)`"></span>
+                                        </div>
+                                        <div class="w-full bg-gray-200 rounded-full h-2">
+                                            <div
+                                                class="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                                :style="`width: ${option.percentage}%`"
+                                            ></div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Empty State -->
+                <div x-show="filteredPolls.length === 0 && !loading" class="text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">No polls found</h3>
+                    <p class="mt-1 text-sm text-gray-500">Get started by creating your first poll.</p>
+                    <div class="mt-6">
+                        <a href="/polls/create" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                            Create Poll
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div x-show="loading" class="text-center py-12">
+                    <svg class="animate-spin mx-auto h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="mt-2 text-sm text-gray-600">Loading polls...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Poll Details Modal -->
+        <div x-show="showModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" x-cloak>
+            <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <!-- Modal Header -->
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">Poll Details</h3>
+                        <button @click="showModal = false" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Poll Details Content -->
+                    <div x-show="selectedPoll">
+                        <div class="mb-6">
+                            <h4 class="font-medium text-gray-900 mb-2" x-text="selectedPoll?.question"></h4>
+                            <div class="text-sm text-gray-500 space-x-4">
+                                <span x-text="`Total Votes: ${selectedPoll?.total_votes || 0}`"></span>
+                                <span x-text="`Created: ${selectedPoll ? formatDate(selectedPoll.created_at) : ''}`"></span>
+                                <span x-text="`Expires: ${selectedPoll ? formatDate(selectedPoll.expires_at) : ''}`"></span>
+                            </div>
+                        </div>
+
+                        <!-- Chart Container -->
+                        <div class="mb-6">
+                            <canvas id="pollChart" width="400" height="200"></canvas>
+                        </div>
+
+                        <!-- Detailed Results -->
+                        <div class="space-y-4">
+                            <template x-for="option in selectedPoll?.options || []" :key="option.id">
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="font-medium" x-text="option.text"></span>
+                                        <div class="text-right">
+                                            <div class="text-lg font-semibold" x-text="option.votes"></div>
+                                            <div class="text-sm text-gray-500" x-text="`${option.percentage}%`"></div>
+                                        </div>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-3">
+                                        <div
+                                            class="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500"
+                                            :style="`width: ${option.percentage}%`"
+                                        ></div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function pollManager() {
+            return {
+                polls: [],
+                filteredPolls: [],
+                loading: true,
+                showModal: false,
+                selectedPoll: null,
+                chart: null,
+                stats: {
+                    active_count: 0,
+                    total_votes: 0,
+                    expiring_soon: 0,
+                    completed_count: 0
+                },
+                filters: {
+                    status: '',
+                    sortBy: 'created_at',
+                    search: ''
+                },
+                filterTimeout: null,
+
+                async init() {
+                    await this.loadPolls();
+                    this.calculateStats();
+                    this.filterPolls();
+                },
+
+                async loadPolls() {
+                    try {
+                        this.loading = true;
+                        const response = await fetch('/api/polls/results');
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            this.polls = data.polls || [];
+                        } else {
+                            console.error('Failed to load polls:', data.error);
+                        }
+                    } catch (error) {
+                        console.error('Error loading polls:', error);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                calculateStats() {
+                    this.stats.active_count = this.polls.filter(p => p.is_active).length;
+                    this.stats.completed_count = this.polls.filter(p => !p.is_active).length;
+                    this.stats.total_votes = this.polls.reduce((sum, p) => sum + p.total_votes, 0);
+                    this.stats.expiring_soon = this.polls.filter(p => p.is_active && p.days_remaining <= 2).length;
+                },
+
+                filterPolls() {
+                    let filtered = [...this.polls];
+
+                    // Status filter
+                    if (this.filters.status) {
+                        filtered = filtered.filter(poll => {
+                            return this.filters.status === 'active' ? poll.is_active : !poll.is_active;
+                        });
+                    }
+
+                    // Search filter
+                    if (this.filters.search) {
+                        const search = this.filters.search.toLowerCase();
+                        filtered = filtered.filter(poll =>
+                            poll.question.toLowerCase().includes(search)
+                        );
+                    }
+
+                    // Sort
+                    filtered.sort((a, b) => {
+                        switch (this.filters.sortBy) {
+                            case 'total_votes':
+                                return b.total_votes - a.total_votes;
+                            case 'expires_at':
+                                return new Date(a.expires_at) - new Date(b.expires_at);
+                            default:
+                                return new Date(b.created_at) - new Date(a.created_at);
+                        }
+                    });
+
+                    this.filteredPolls = filtered;
+                },
+
+                debounceFilter() {
+                    clearTimeout(this.filterTimeout);
+                    this.filterTimeout = setTimeout(() => {
+                        this.filterPolls();
+                    }, 300);
+                },
+
+                showPollDetails(poll) {
+                    this.selectedPoll = poll;
+                    this.showModal = true;
+
+                    // Create chart after modal is shown
+                    this.$nextTick(() => {
+                        this.createChart();
+                    });
+                },
+
+                createChart() {
+                    const ctx = document.getElementById('pollChart');
+                    if (!ctx || !this.selectedPoll) return;
+
+                    // Destroy existing chart
+                    if (this.chart) {
+                        this.chart.destroy();
+                    }
+
+                    const options = this.selectedPoll.options || [];
+
+                    this.chart = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: options.map(opt => opt.text),
+                            datasets: [{
+                                data: options.map(opt => opt.votes),
+                                backgroundColor: [
+                                    '#3B82F6', '#10B981', '#F59E0B',
+                                    '#EF4444', '#8B5CF6', '#06B6D4'
+                                ],
+                                borderWidth: 2,
+                                borderColor: '#fff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            const value = context.parsed;
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                            return `${context.label}: ${value} votes (${percentage}%)`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                },
+
+                async refreshPolls() {
+                    await this.loadPolls();
+                    this.calculateStats();
+                    this.filterPolls();
+                },
+
+                async exportPollResults(pollId) {
+                    try {
+                        const response = await fetch(`/api/polls/${pollId}/export`);
+                        if (response.ok) {
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `poll-${pollId}-results.csv`;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+                        }
+                    } catch (error) {
+                        console.error('Export failed:', error);
+                    }
+                },
+
+                formatDate(dateString) {
+                    return new Date(dateString).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                }
+            }
+        }
+    </script>
+</body>
+</html>

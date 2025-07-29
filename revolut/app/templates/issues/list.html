@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Header with Create Button -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-exclamation-triangle"></i> Community Issues</h2>
+        <a href="/issues/create" class="btn btn-warning">
+            <i class="bi bi-plus-circle"></i> Report New Issue
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Search Issues</label>
+                    <input type="text" class="form-control" id="searchInput"
+                           placeholder="Search by title or description">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Location</label>
+                    <select class="form-select" id="locationFilter">
+                        <option value="">All Locations</option>
+                        <option>Nairobi West</option>
+                        <option>Mombasa Central</option>
+                        <option>Kisumu</option>
+                        <option>Nakuru</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" id="statusFilter">
+                        <option value="Open">Open Issues</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Resolved">Resolved</option>
+                        <option value="all">All Status</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button class="btn btn-primary d-block w-100" onclick="filterIssues()">
+                        <i class="bi bi-search"></i> Filter
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Issues List -->
+    <div id="issuesContainer">
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading issues...</p>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <nav aria-label="Issues pagination" id="paginationContainer" style="display: none;">
+        <ul class="pagination justify-content-center">
+            <!-- Pagination will be generated dynamically -->
+        </ul>
+    </nav>
+</div>
+
+<script>
+let currentPage = 1;
+let totalPages = 1;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadIssues();
+
+    // Set up search on Enter key
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            filterIssues();
+        }
+    });
+});
+
+function loadIssues(page = 1) {
+    const search = document.getElementById('searchInput').value;
+    const location = document.getElementById('locationFilter').value;
+    const status = document.getElementById('statusFilter').value;
+
+    const params = new URLSearchParams({
+        page: page,
+        search: search,
+        location: location,
+        status: status
+    });
+
+    fetch(`/api/issues?${params.toString()}`)
+        .then(response => response.json())
+        .then(data => {
+            displayIssues(data);
+            currentPage = page;
+        })
+        .catch(error => {
+            console.error('Error loading issues:', error);
+            document.getElementById('issuesContainer').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Error loading issues. Please try again.
+                </div>
+            `;
+        });
+}
+
+function displayIssues(issues) {
+    const container = document.getElementById('issuesContainer');
+
+    if (issues.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="bi bi-inbox display-1 text-muted"></i>
+                <h4 class="text-muted mt-3">No Issues Found</h4>
+                <p class="text-muted">Try adjusting your filters or create a new issue.</p>
+                <a href="/issues/create" class="btn btn-warning">
+                    <i class="bi bi-plus-circle"></i> Report New Issue
+                </a>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = issues.map(issue => `
+        <div class="card mb-3 shadow-sm">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h5 class="card-title">
+                            <a href="/issues/${issue.id}" class="text-decoration-none">
+                                ${escapeHtml(issue.title)}
+                            </a>
+                        </h5>
+                        <p class="card-text text-muted">
+                            ${escapeHtml(issue.description.substring(0, 150))}${issue.description.length > 150 ? '...' : ''}
+                        </p>
+                        <div class="d-flex flex-wrap gap-2 mb-2">
+                            <span class="badge bg-secondary">
+                                <i class="bi bi-geo-alt"></i> ${escapeHtml(issue.location)}
+                            </span>
+                            <span class="badge bg-info">
+                                <i class="bi bi-tag"></i> ${escapeHtml(issue.category)}
+                            </span>
+                            <span class="badge bg-${getPriorityColor(issue.priority)}">
+                                <i class="bi bi-flag"></i> ${escapeHtml(issue.priority)}
+                            </span>
+                            <span class="badge bg-${getStatusColor(issue.status)}">
+                                <i class="bi bi-circle"></i> ${escapeHtml(issue.status)}
+                            </span>
+                        </div>
+                        <small class="text-muted">
+                            <i class="bi bi-clock"></i> Created ${formatDate(issue.created_at)}
+                            ${issue.feedback_count > 0 ? `• <i class="bi bi-chat-square"></i> ${issue.feedback_count} feedback` : ''}
+                        </small>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="btn-group-vertical" role="group">
+                            <a href="/issues/${issue.id}" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-eye"></i> View Details
+                            </a>
+                            <button class="btn btn-outline-success btn-sm"
+                                    onclick="addFeedback(${issue.id}, '${escapeHtml(issue.title)}')">
+                                <i class="bi bi-chat-plus"></i> Add Feedback
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function filterIssues() {
+    currentPage = 1;
+    loadIssues(currentPage);
+}
+
+function addFeedback(issueId, issueTitle) {
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.innerHTML = `
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Feedback</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>Issue: ${issueTitle}</h6>
+                    <form id="feedbackForm">
+                        <div class="mb-3">
+                            <label class="form-label">Your Feedback*</label>
+                            <textarea class="form-control" id="feedbackContent" rows="4"
+                                      placeholder="Share your thoughts or additional information about this issue..." required></textarea>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Your Location</label>
+                                <input type="text" class="form-control" id="feedbackLocation"
+                                       placeholder="Optional">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Contact (for updates)</label>
+                                <input type="tel" class="form-control" id="feedbackContact"
+                                       placeholder="254700000000">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="submitFeedback(${issueId})">
+                        <i class="bi bi-send"></i> Submit Feedback
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    const bootstrapModal = new bootstrap.Modal(modal);
+    bootstrapModal.show();
+
+    modal.addEventListener('hidden.bs.modal', function() {
+        document.body.removeChild(modal);
+    });
+}
+
+function submitFeedback(issueId) {
+    const content = document.getElementById('feedbackContent').value.trim();
+    const location = document.getElementById('feedbackLocation').value.trim();
+    const contact = document.getElementById('feedbackContact').value.trim();
+
+    if (!content) {
+        alert('Please enter your feedback content');
+        return;
+    }
+
+    const feedbackData = {
+        content: content,
+        issue_id: issueId,
+        location: location || null,
+        contact: contact || null,
+        source: 'web'
+    };
+
+    fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(feedbackData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert(`Error: ${data.error}`);
+        } else {
+            alert('Feedback submitted successfully!');
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.querySelector('.modal'));
+            modal.hide();
+            // Reload issues to update feedback count
+            loadIssues(currentPage);
+        }
+    })
+    .catch(error => {
+        alert('Error submitting feedback. Please try again.');
+        console.error('Error:', error);
+    });
+}
+
+// Utility functions
+function escapeHtml(unsafe) {
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function getPriorityColor(priority) {
+    const colors = {
+        'Low': 'success',
+        'Medium': 'warning',
+        'High': 'danger',
+        'Critical': 'dark'
+    };
+    return colors[priority] || 'secondary';
+}
+
+function getStatusColor(status) {
+    const colors = {
+        'Open': 'danger',
+        'In Progress': 'warning',
+        'Resolved': 'success',
+        'Closed': 'secondary'
+    };
+    return colors[status] || 'secondary';
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) return 'today';
+    if (diffDays === 2) return 'yesterday';
+    if (diffDays <= 7) return `${diffDays - 1} days ago`;
+
+    return date.toLocaleDateString();
+}
+</script>
+{% endblock %}

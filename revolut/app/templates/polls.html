@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Public Polls - Revolut & WDO</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #06b6d4;
+            --dark-color: #1f2937;
+            --light-color: #f8fafc;
+            --border-color: #e5e7eb;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            margin: 2rem auto;
+            padding: 2rem;
+            max-width: 1200px;
+        }
+
+        .poll-card {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .poll-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .poll-card-header {
+            background: linear-gradient(135deg, var(--primary-color), #3b82f6);
+            color: white;
+            padding: 1.5rem;
+            border-bottom: none;
+        }
+
+        .poll-option {
+            padding: 1rem;
+            margin: 0.5rem 0;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .poll-option:hover {
+            border-color: var(--primary-color);
+            background: rgba(37, 99, 235, 0.05);
+            transform: translateX(5px);
+        }
+
+        .poll-option.selected {
+            border-color: var(--primary-color);
+            background: rgba(37, 99, 235, 0.1);
+        }
+
+        .poll-option.voted {
+            border-color: var(--success-color);
+            background: rgba(16, 185, 129, 0.1);
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .poll-option input[type="radio"] {
+            margin-right: 0.75rem;
+            transform: scale(1.2);
+        }
+
+        .progress {
+            height: 10px;
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            border-radius: 5px;
+            transition: width 0.6s ease;
+        }
+
+        .btn {
+            border-radius: 12px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), #3b82f6);
+            border: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+            border: none;
+        }
+
+        .badge {
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        .alert {
+            border-radius: 12px;
+            border: none;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--dark-color);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--border-color);
+            margin-bottom: 1rem;
+        }
+
+        .poll-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .vote-count {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .time-remaining {
+            color: var(--warning-color);
+        }
+
+        .vote-animation {
+            animation: voteUpdate 0.8s ease-in-out;
+        }
+
+        @keyframes voteUpdate {
+            0% { background-color: rgba(16, 185, 129, 0.3); }
+            50% { background-color: rgba(16, 185, 129, 0.1); }
+            100% { background-color: transparent; }
+        }
+
+        .thank-you-message {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+            color: white;
+            padding: 1rem;
+            border-radius: 12px;
+            text-align: center;
+            margin-top: 1rem;
+            animation: slideIn 0.5s ease-in;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="text-dark fw-bold mb-2">Public Polls</h1>
+                <p class="text-muted mb-0">Share your voice on important community issues</p>
+            </div>
+            <div>
+                <button class="btn btn-outline-primary me-2" onclick="refreshPolls()">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+                </button>
+                <a href="/" class="btn btn-secondary">
+                    <i class="bi bi-house me-2"></i>Home
+                </a>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-primary active" onclick="filterPolls('all')">
+                                All Polls
+                            </button>
+                            <button type="button" class="btn btn-outline-success" onclick="filterPolls('active')">
+                                Active Only
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <span class="text-muted" id="polls-count">Loading polls...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="text-center py-5">
+            <div class="loading-spinner mx-auto mb-3"></div>
+            <p class="text-muted">Loading polls...</p>
+        </div>
+
+        <!-- Polls Container -->
+        <div id="polls-container" style="display: none;">
+            <!-- Polls will be loaded here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="empty-state" style="display: none;">
+            <i class="bi bi-inbox"></i>
+            <h3>No Polls Available</h3>
+            <p class="text-muted">There are currently no active polls. Check back later!</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="error-state" class="alert alert-danger" style="display: none;">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <strong>Error loading polls.</strong> Please try refreshing the page.
+            <button class="btn btn-outline-danger btn-sm ms-2" onclick="refreshPolls()">
+                Retry
+            </button>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center py-4">
+                    <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                    <h4 class="mt-3">Vote Recorded!</h4>
+                    <p class="text-muted">Thank you for participating in this poll.</p>
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">Continue</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        let allPolls = [];
+        let currentFilter = 'all';
+        let votedPolls = new Set(); // Track polls user has voted on
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPolls();
+            // Load voted polls from localStorage if available (fallback for session persistence)
+            const savedVotedPolls = localStorage.getItem('votedPolls');
+            if (savedVotedPolls) {
+                votedPolls = new Set(JSON.parse(savedVotedPolls));
+            }
+        });
+
+        async function loadPolls() {
+            showLoadingState();
+
+            try {
+                console.log('Fetching polls from /api/polls...');
+                const response = await fetch('/api/polls');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('Polls data received:', data);
+
+                allPolls = data.polls || [];
+                displayPolls(allPolls);
+                updatePollsCount();
+
+            } catch (error) {
+                console.error('Error loading polls:', error);
+                showErrorState();
+            }
+        }
+
+        function displayPolls(polls) {
+            hideAllStates();
+
+            if (!polls || polls.length === 0) {
+                showEmptyState();
+                return;
+            }
+
+            const container = document.getElementById('polls-container');
+            container.innerHTML = '';
+            container.style.display = 'block';
+
+            polls.forEach((poll, index) => {
+                const pollCard = createPollCard(poll, index);
+                container.appendChild(pollCard);
+            });
+
+            // Add fade-in animation
+            container.classList.add('fade-in');
+        }
+
+        function createPollCard(poll, index) {
+            const card = document.createElement('div');
+            card.className = 'poll-card';
+            card.setAttribute('data-poll-id', poll.id);
+
+            const totalVotes = poll.total_votes || 0;
+            const daysRemaining = poll.days_remaining || 0;
+            const isActive = poll.is_active !== false;
+            const hasVoted = votedPolls.has(poll.id);
+
+            // Calculate percentages for each option
+            poll.options.forEach(option => {
+                option.percentage = totalVotes > 0 ? Math.round((option.votes || 0) / totalVotes * 100) : 0;
+            });
+
+            card.innerHTML = `
+                <div class="poll-card-header">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h5 class="mb-2">${escapeHtml(poll.question)}</h5>
+                        <span class="badge ${isActive ? 'bg-success' : 'bg-secondary'}">
+                            ${isActive ? 'Active' : 'Expired'}
+                        </span>
+                    </div>
+                    <small class="opacity-75">
+                        <i class="bi bi-calendar me-1"></i>
+                        ${daysRemaining > 0 ? `${daysRemaining} days remaining` : 'Expired'}
+                    </small>
+                </div>
+
+                <div class="card-body">
+                    ${hasVoted ? `
+                        <div class="thank-you-message mb-3">
+                            <i class="bi bi-check-circle me-2"></i>
+                            Thank you for your vote! Here are the current results:
+                        </div>
+                    ` : ''}
+
+                    <form id="poll-form-${poll.id}" ${(!isActive || hasVoted) ? 'style="pointer-events: none; opacity: 0.8;"' : ''}>
+                        <div id="poll-options-${poll.id}">
+                            ${poll.options.map((option, optionIndex) => `
+                                <div class="poll-option ${hasVoted ? 'voted' : ''}"
+                                     onclick="${!hasVoted && isActive ? `selectOption(${poll.id}, ${option.id || optionIndex})` : ''}"
+                                     data-option-id="${option.id || optionIndex}">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <label class="form-check-label d-flex align-items-center mb-0" style="cursor: ${hasVoted || !isActive ? 'default' : 'pointer'};">
+                                            ${!hasVoted && isActive ? `
+                                                <input type="radio"
+                                                       name="poll-${poll.id}"
+                                                       value="${option.id || optionIndex}"
+                                                       class="form-check-input">
+                                            ` : ''}
+                                            <span>${escapeHtml(option.text)}</span>
+                                        </label>
+                                        <div class="text-end">
+                                            <span class="vote-count" data-vote-count="${option.id || optionIndex}">${option.votes || 0} votes</span>
+                                            <small class="text-muted d-block" data-percentage="${option.id || optionIndex}">${option.percentage || 0}%</small>
+                                        </div>
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-primary"
+                                             role="progressbar"
+                                             style="width: ${option.percentage || 0}%"
+                                             data-progress-bar="${option.id || optionIndex}">
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        ${(isActive && !hasVoted) ? `
+                            <div class="text-center mt-3">
+                                <button type="button"
+                                        class="btn btn-primary"
+                                        onclick="submitVote(${poll.id})"
+                                        id="vote-btn-${poll.id}">
+                                    <i class="bi bi-hand-thumbs-up me-2"></i>Cast Vote
+                                </button>
+                            </div>
+                        ` : ''}
+                    </form>
+
+                    <div class="poll-meta">
+                        <span>
+                            <i class="bi bi-people me-1"></i>
+                            <span class="vote-count" id="total-votes-${poll.id}">${totalVotes}</span> total votes
+                        </span>
+                        <span>
+                            <i class="bi bi-clock me-1"></i>
+                            Created ${formatDate(poll.created_at)}
+                        </span>
+                    </div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        function selectOption(pollId, optionId) {
+            // Remove previous selections for this poll
+            document.querySelectorAll(`input[name="poll-${pollId}"]`).forEach(input => {
+                input.closest('.poll-option').classList.remove('selected');
+            });
+
+            // Select the clicked option
+            const selectedInput = document.querySelector(`input[name="poll-${pollId}"][value="${optionId}"]`);
+            if (selectedInput) {
+                selectedInput.checked = true;
+                selectedInput.closest('.poll-option').classList.add('selected');
+            }
+        }
+
+        async function submitVote(pollId) {
+            const selectedOption = document.querySelector(`input[name="poll-${pollId}"]:checked`);
+
+            if (!selectedOption) {
+                showAlert('Please select an option before voting', 'warning');
+                return;
+            }
+
+            const button = document.getElementById(`vote-btn-${pollId}`);
+            const originalHtml = button.innerHTML;
+
+            // Show loading state
+            button.innerHTML = '<span class="loading-spinner me-2"></span>Submitting...';
+            button.disabled = true;
+
+            try {
+                const response = await fetch(`/api/polls/${pollId}/vote`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        option_id: parseInt(selectedOption.value)
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    // Mark this poll as voted
+                    votedPolls.add(pollId);
+                    localStorage.setItem('votedPolls', JSON.stringify([...votedPolls]));
+
+                    // Update the poll display immediately with the new vote counts
+                    if (result.updated_poll) {
+                        updatePollDisplay(pollId, result.updated_poll);
+                    } else {
+                        // Fallback: increment the voted option locally
+                        updateVoteCountsLocally(pollId, parseInt(selectedOption.value));
+                    }
+
+                    // Show success modal
+                    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+                    successModal.show();
+
+                    // Also refresh polls after a short delay to get server data
+                    setTimeout(() => {
+                        refreshPollData();
+                    }, 1000);
+
+                } else {
+                    showAlert(result.error || 'Failed to submit vote', 'danger');
+                    button.innerHTML = originalHtml;
+                    button.disabled = false;
+                }
+
+            } catch (error) {
+                console.error('Error submitting vote:', error);
+                showAlert('Error submitting vote. Please try again.', 'danger');
+                button.innerHTML = originalHtml;
+                button.disabled = false;
+            }
+        }
+
+        function updatePollDisplay(pollId, updatedPoll) {
+            const pollCard = document.querySelector(`[data-poll-id="${pollId}"]`);
+            if (!pollCard) return;
+
+            const totalVotes = updatedPoll.total_votes || 0;
+
+            // Update total votes count
+            const totalVotesElement = document.getElementById(`total-votes-${pollId}`);
+            if (totalVotesElement) {
+                totalVotesElement.textContent = totalVotes;
+                totalVotesElement.classList.add('vote-animation');
+                setTimeout(() => totalVotesElement.classList.remove('vote-animation'), 800);
+            }
+
+            // Update each option's vote count and percentage
+            updatedPoll.options.forEach(option => {
+                const percentage = totalVotes > 0 ? Math.round((option.votes || 0) / totalVotes * 100) : 0;
+                const optionId = option.id || updatedPoll.options.indexOf(option);
+
+                // Update vote count
+                const voteCountElement = pollCard.querySelector(`[data-vote-count="${optionId}"]`);
+                if (voteCountElement) {
+                    voteCountElement.textContent = `${option.votes || 0} votes`;
+                    voteCountElement.classList.add('vote-animation');
+                    setTimeout(() => voteCountElement.classList.remove('vote-animation'), 800);
+                }
+
+                // Update percentage
+                const percentageElement = pollCard.querySelector(`[data-percentage="${optionId}"]`);
+                if (percentageElement) {
+                    percentageElement.textContent = `${percentage}%`;
+                }
+
+                // Update progress bar
+                const progressBar = pollCard.querySelector(`[data-progress-bar="${optionId}"]`);
+                if (progressBar) {
+                    progressBar.style.width = `${percentage}%`;
+                }
+            });
+
+            // Replace the form with thank you message and results
+            const form = document.getElementById(`poll-form-${pollId}`);
+            if (form) {
+                // Add thank you message
+                const optionsContainer = form.querySelector(`#poll-options-${pollId}`);
+                if (optionsContainer && !form.querySelector('.thank-you-message')) {
+                    const thankYouDiv = document.createElement('div');
+                    thankYouDiv.className = 'thank-you-message mb-3';
+                    thankYouDiv.innerHTML = `
+                        <i class="bi bi-check-circle me-2"></i>
+                        Thank you for your vote! Here are the current results:
+                    `;
+                    form.insertBefore(thankYouDiv, optionsContainer);
+                }
+
+                // Remove voting functionality
+                form.style.pointerEvents = 'none';
+                form.style.opacity = '0.8';
+
+                // Mark all options as voted
+                form.querySelectorAll('.poll-option').forEach(option => {
+                    option.classList.add('voted');
+                    option.onclick = null;
+                });
+
+                // Remove vote button
+                const voteButton = form.querySelector(`#vote-btn-${pollId}`);
+                if (voteButton) {
+                    voteButton.remove();
+                }
+
+                // Remove radio inputs
+                form.querySelectorAll('input[type="radio"]').forEach(input => {
+                    input.remove();
+                });
+            }
+        }
+
+        function updateVoteCountsLocally(pollId, votedOptionId) {
+            // Find the poll in our local data
+            const poll = allPolls.find(p => p.id === pollId);
+            if (!poll) return;
+
+            // Increment the voted option
+            const option = poll.options.find(opt => (opt.id || poll.options.indexOf(opt)) === votedOptionId);
+            if (option) {
+                option.votes = (option.votes || 0) + 1;
+                poll.total_votes = (poll.total_votes || 0) + 1;
+            }
+
+            // Update the display
+            updatePollDisplay(pollId, poll);
+        }
+
+        async function refreshPollData() {
+            try {
+                const response = await fetch('/api/polls');
+                if (response.ok) {
+                    const data = await response.json();
+                    allPolls = data.polls || [];
+
+                    // Update polls without changing the display state (don't show loading)
+                    allPolls.forEach(poll => {
+                        const pollCard = document.querySelector(`[data-poll-id="${poll.id}"]`);
+                        if (pollCard) {
+                            updatePollDisplay(poll.id, poll);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error refreshing poll data:', error);
+            }
+        }
+
+        function filterPolls(filter) {
+            currentFilter = filter;
+
+            // Update active filter button
+            document.querySelectorAll('[onclick^="filterPolls"]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            let filteredPolls = allPolls;
+
+            if (filter === 'active') {
+                filteredPolls = allPolls.filter(poll => poll.is_active !== false);
+            }
+
+            displayPolls(filteredPolls);
+            updatePollsCount(filteredPolls.length);
+        }
+
+        function refreshPolls() {
+            const button = event.target;
+            const originalHtml = button.innerHTML;
+
+            button.innerHTML = '<span class="loading-spinner me-2"></span>Refreshing...';
+            button.disabled = true;
+
+            loadPolls().finally(() => {
+                button.innerHTML = originalHtml;
+                button.disabled = false;
+            });
+        }
+
+        function updatePollsCount(count = null) {
+            const countElement = document.getElementById('polls-count');
+            const pollCount = count !== null ? count : allPolls.length;
+
+            if (pollCount === 0) {
+                countElement.textContent = 'No polls available';
+            } else if (pollCount === 1) {
+                countElement.textContent = '1 poll available';
+            } else {
+                countElement.textContent = `${pollCount} polls available`;
+            }
+        }
+
+        // Utility functions
+        function showLoadingState() {
+            hideAllStates();
+            document.getElementById('loading-state').style.display = 'block';
+        }
+
+        function showEmptyState() {
+            hideAllStates();
+            document.getElementById('empty-state').style.display = 'block';
+        }
+
+        function showErrorState() {
+            hideAllStates();
+            document.getElementById('error-state').style.display = 'block';
+        }
+
+        function hideAllStates() {
+            document.getElementById('loading-state').style.display = 'none';
+            document.getElementById('polls-container').style.display = 'none';
+            document.getElementById('empty-state').style.display = 'none';
+            document.getElementById('error-state').style.display = 'none';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'Unknown';
+
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString();
+            } catch (error) {
+                return 'Unknown';
+            }
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            alertDiv.innerHTML = `
+                <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+
+        // Auto-refresh polls every 30 seconds to keep data current
+        setInterval(() => {
+            refreshPollData();
+        }, 30000);
+    </script>
+</body>
+</html>

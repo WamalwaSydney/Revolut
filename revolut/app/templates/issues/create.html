@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h4><i class="bi bi-exclamation-triangle"></i> Report New Issue</h4>
+                </div>
+                <div class="card-body">
+                    <form id="issueForm">
+                        <div class="mb-3">
+                            <label class="form-label">Issue Title*</label>
+                            <input type="text" class="form-control" id="issueTitle" required
+                                   placeholder="Brief description of the issue">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Detailed Description*</label>
+                            <textarea class="form-control" id="issueDescription" rows="5" required
+                                      placeholder="Provide detailed information about the issue"></textarea>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Location*</label>
+                                <select class="form-select" id="issueLocation" required>
+                                    <option value="">Select your area</option>
+                                    <option>Nairobi West</option>
+                                    <option>Mombasa Central</option>
+                                    <option>Kisumu</option>
+                                    <option>Nakuru</option>
+                                    <!-- Add more locations -->
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Category</label>
+                                <select class="form-select" id="issueCategory">
+                                    <option value="General">General</option>
+                                    <option value="Education">Education</option>
+                                    <option value="Health">Health</option>
+                                    <option value="Infrastructure">Infrastructure</option>
+                                    <option value="Water">Water</option>
+                                    <option value="Security">Security</option>
+                                    <option value="Environment">Environment</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-2">
+                            <div class="col-md-6">
+                                <label class="form-label">Priority Level</label>
+                                <select class="form-select" id="issuePriority">
+                                    <option value="Low">Low</option>
+                                    <option value="Medium" selected>Medium</option>
+                                    <option value="High">High</option>
+                                    <option value="Critical">Critical</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Contact (for updates)</label>
+                                <input type="tel" class="form-control" id="issueContact"
+                                       placeholder="254700000000">
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-plus-circle"></i> Create Issue
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('issueForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = {
+        title: document.getElementById('issueTitle').value,
+        description: document.getElementById('issueDescription').value,
+        location: document.getElementById('issueLocation').value,
+        category: document.getElementById('issueCategory').value,
+        priority: document.getElementById('issuePriority').value,
+        contact: document.getElementById('issueContact').value
+    };
+
+    fetch('/api/issues', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert(`Error: ${data.error}`);
+        } else {
+            alert('Issue created successfully! You can now add feedback to it.');
+            window.location.href = '/issues';
+        }
+    })
+    .catch(error => {
+        alert('Error creating issue. Please try again.');
+        console.error('Error:', error);
+    });
+});
+</script>
+{% endblock %}

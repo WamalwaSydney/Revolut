@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Official Rating Section -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h4><i class="bi bi-award"></i> Rate Your Official</h4>
+                </div>
+                <div class="card-body">
+                    <form id="ratingForm">
+                        <!-- Official Selection -->
+                        <div class="mb-3">
+                            <label class="form-label">Find Your Official*</label>
+                            <div class="input-group mb-3">
+                                <input type="text" class="form-control" id="officialSearch"
+                                       placeholder="Start typing official's name...">
+                                <button class="btn btn-outline-secondary" type="button" id="searchOfficialBtn">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                            <div id="officialResults" class="d-none">
+                                <div class="list-group" id="officialList"></div>
+                            </div>
+                        </div>
+
+                        <!-- Hidden selected official info -->
+                        <input type="hidden" id="officialId">
+                        <input type="hidden" id="officialPosition">
+                        <input type="hidden" id="officialConstituency">
+
+                        <!-- Rating Input -->
+                        <div class="mb-3">
+                            <label class="form-label">Rating (1-5)*</label>
+                            <div class="rating-input mb-2">
+                                {% for i in range(5, 0, -1) %}
+                                <input type="radio" id="star{{i}}" name="rating" value="{{i}}">
+                                <label for="star{{i}}" class="bi bi-star-fill"></label>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Comments -->
+                        <div class="mb-3">
+                            <label class="form-label">Comments (Optional)</label>
+                            <textarea class="form-control" id="comments" rows="3"></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Submit Rating
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Rated Officials -->
+        <div class="col-lg-4">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4><i class="bi bi-trophy"></i> Top Rated Officials</h4>
+                </div>
+                <div class="card-body">
+                    <div class="list-group" id="topOfficials">
+                        <!-- Dynamically loaded -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- All Officials Table -->
+    <div class="card shadow mt-4">
+        <div class="card-header bg-info text-white">
+            <h4><i class="bi bi-people"></i> All Officials</h4>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped table-hover" id="officialsTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Position</th>
+                        <th>Constituency</th>
+                        <th>Rating</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Dynamically loaded -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Load top officials
+    fetch('/api/scorecards/top?limit=5')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('topOfficials');
+            container.innerHTML = data.map(official => `
+                <div class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">${official.name}</h5>
+                        <span class="badge bg-primary rounded-pill">
+                            ${official.average_score.toFixed(1)}
+                        </span>
+                    </div>
+                    <small>${official.position}, ${official.constituency}</small>
+                </div>
+            `).join('');
+        });
+
+    // Load all officials
+    fetch('/api/scorecards/officials')
+        .then(response => response.json())
+        .then(data => {
+            const tableBody = document.querySelector('#officialsTable tbody');
+            tableBody.innerHTML = Object.entries(data.officials).map(([position, officials]) => `
+                <tr class="table-info">
+                    <td colspan="5"><strong>${position}</strong></td>
+                </tr>
+                ${officials.map(official => `
+                    <tr>
+                        <td>${official.name}</td>
+                        <td>${official.department}</td>
+                        <td>${official.constituency}</td>
+                        <td>
+                            <div class="rating-display">
+                                ${'<i class="bi bi-star-fill text-warning"></i>'.repeat(Math.floor(official.average_score))}
+                                ${official.average_score % 1 >= 0.5 ? '<i class="bi bi-star-half text-warning"></i>' : ''}
+                                ${'<i class="bi bi-star text-warning"></i>'.repeat(5 - Math.ceil(official.average_score))}
+                                <span class="ms-2">${official.average_score.toFixed(1)}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary"
+                                    onclick="rateOfficial('${official.id}', '${official.name.replace(/'/g, "\\'")}',
+                                    '${official.position.replace(/'/g, "\\'")}',
+                                    '${official.constituency.replace(/'/g, "\\'")}')">
+                                Rate
+                            </button>
+                        </td>
+                    </tr>
+                `).join('')}
+            `).join('');
+        });
+
+    // Official search functionality
+    document.getElementById('searchOfficialBtn').addEventListener('click', searchOfficials);
+    document.getElementById('officialSearch').addEventListener('keyup', function(e) {
+        if (e.key === 'Enter') searchOfficials();
+    });
+
+    // Rating form submission
+    document.getElementById('ratingForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const rating = document.querySelector('input[name="rating"]:checked')?.value;
+        if (!rating) {
+            alert('Please select a rating');
+            return;
+        }
+
+        const formData = {
+            name: document.getElementById('officialSearch').value,
+            position: document.getElementById('officialPosition').value,
+            constituency: document.getElementById('officialConstituency').value,
+            score: parseInt(rating),
+            comment: document.getElementById('comments').value
+        };
+
+        fetch('/api/scorecards/rate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(`Error: ${data.error}`);
+            } else {
+                alert(`Rating submitted successfully! New average: ${data.new_average.toFixed(1)}`);
+                this.reset();
+                document.getElementById('officialResults').classList.add('d-none');
+                // Refresh data
+                document.dispatchEvent(new Event('DOMContentLoaded'));
+            }
+        });
+    });
+});
+
+function searchOfficials() {
+    const query = document.getElementById('officialSearch').value;
+    if (!query) return;
+
+    fetch(`/api/scorecards/search?name=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('officialList');
+            const resultsDiv = document.getElementById('officialResults');
+
+            if (data.length === 0) {
+                container.innerHTML = '<div class="list-group-item">No officials found</div>';
+            } else {
+                container.innerHTML = data.map(official => `
+                    <button type="button" class="list-group-item list-group-item-action"
+                            onclick="selectOfficial(
+                                '${official.id}',
+                                '${official.name.replace(/'/g, "\\'")}',
+                                '${official.position.replace(/'/g, "\\'")}',
+                                '${official.constituency.replace(/'/g, "\\'")}'
+                            )">
+                        <strong>${official.name}</strong><br>
+                        <small>${official.position}, ${official.constituency}</small>
+                    </button>
+                `).join('');
+            }
+
+            resultsDiv.classList.remove('d-none');
+        });
+}
+
+function selectOfficial(id, name, position, constituency) {
+    document.getElementById('officialId').value = id;
+    document.getElementById('officialSearch').value = name;
+    document.getElementById('officialPosition').value = position;
+    document.getElementById('officialConstituency').value = constituency;
+    document.getElementById('officialResults').classList.add('d-none');
+}
+
+function rateOfficial(id, name, position, constituency) {
+    selectOfficial(id, name, position, constituency);
+    document.getElementById('ratingForm').scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+
+<style>
+.rating-input {
+    direction: rtl;
+    display: inline-block;
+}
+.rating-input input {
+    display: none;
+}
+.rating-input label {
+    font-size: 2rem;
+    color: #ddd;
+    cursor: pointer;
+    margin: 0 2px;
+}
+.rating-input input:checked ~ label,
+.rating-input label:hover,
+.rating-input label:hover ~ label {
+    color: #ffc107;
+}
+.rating-input input:checked + label:hover,
+.rating-input input:checked ~ label:hover,
+.rating-input label:hover ~ input:checked ~ label {
+    color: #ffc107;
+}
+.rating-display i {
+    font-size: 1.2rem;
+}
+</style>
+{% endblock %}

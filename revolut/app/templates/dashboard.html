@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Dashboard Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Community Dashboard</h1>
+        <div class="d-none d-sm-inline-block">
+            <select class="form-select" id="locationFilter">
+                <option value="">All Locations</option>
+                <option>Nairobi West</option>
+                <option>Mombasa Central</option>
+                <!-- More options -->
+            </select>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row">
+        <!-- Feedback Stats -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Feedback</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalFeedback">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-chat-square-text fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Positive Sentiment -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Positive Sentiment</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="positiveSentiment">0%</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-emoji-smile fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Issues -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Active Issues</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="activeIssues">0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Avg Official Rating -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Avg Official Rating</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="avgRating">0.0</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-star fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row">
+        <!-- Sentiment Trend -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Community Sentiment Trend</h6>
+                    <div class="dropdown no-arrow">
+                        <select class="form-select form-select-sm" id="timeRange">
+                            <option value="7">Last 7 Days</option>
+                            <option value="30" selected>Last 30 Days</option>
+                            <option value="90">Last 90 Days</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="sentimentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Issue Categories -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Issue Categories</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4 pb-2">
+                        <canvas id="issuePieChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-center small" id="issueLegend">
+                        <!-- Dynamically generated -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerts and Polls Row -->
+    <div class="row">
+        <!-- Active Alerts -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Active Alerts
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group" id="alertsList">
+                        <!-- Dynamically loaded -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Polls -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">
+                        <i class="bi bi-bar-chart"></i> Active Polls
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div id="pollsList">
+                        <!-- Dynamically loaded -->
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="/polls" class="btn btn-primary btn-sm">View All Polls</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Global chart references
+let sentimentChart, issuePieChart;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Load dashboard data
+    fetchDashboardData();
+
+    // Set up event listeners
+    document.getElementById('locationFilter').addEventListener('change', fetchDashboardData);
+    document.getElementById('timeRange').addEventListener('change', fetchDashboardData);
+});
+
+function fetchDashboardData() {
+    const location = document.getElementById('locationFilter').value;
+    const days = document.getElementById('timeRange').value;
+
+    fetch(`/api/dashboard-data?location=${encodeURIComponent(location)}&days=${days}`)
+        .then(response => response.json())
+        .then(data => {
+            updateStats(data.stats);
+            updateCharts(data.charts);
+            updateAlerts(data.alerts);
+            updatePolls(data.polls);
+        });
+}
+
+function updateStats(stats) {
+    document.getElementById('totalFeedback').textContent = stats.total_feedback;
+    document.getElementById('positiveSentiment').textContent = `${stats.positive_sentiment}%`;
+    document.getElementById('activeIssues').textContent = stats.active_issues;
+    document.getElementById('avgRating').textContent = stats.avg_rating.toFixed(1);
+}
+
+function updateCharts(chartData) {
+    // Destroy existing charts if they exist
+    if (sentimentChart) sentimentChart.destroy();
+    if (issuePieChart) issuePieChart.destroy();
+
+    // Sentiment Trend Chart
+    const sentimentCtx = document.getElementById('sentimentChart').getContext('2d');
+    sentimentChart = new Chart(sentimentCtx, {
+        type: 'line',
+        data: {
+            labels: chartData.sentiment.labels,
+            datasets: [{
+                label: 'Sentiment Score',
+                data: chartData.sentiment.data,
+                backgroundColor: 'rgba(78, 115, 223, 0.05)',
+                borderColor: 'rgba(78, 115, 223, 1)',
+                pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+                fill: 'origin'
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    min: -1,
+                    max: 1,
+                    ticks: {
+                        callback: function(value) {
+                            if (value === 1) return 'Positive';
+                            if (value === -1) return 'Negative';
+                            if (value === 0) return 'Neutral';
+                            return value;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Issue Categories Pie Chart
+    const issueCtx = document.getElementById('issuePieChart').getContext('2d');
+    issuePieChart = new Chart(issueCtx, {
+        type: 'doughnut',
+        data: {
+            labels: chartData.issues.labels,
+            datasets: [{
+                data: chartData.issues.data,
+                backgroundColor: [
+                    'rgba(78, 115, 223, 0.8)',
+                    'rgba(28, 200, 138, 0.8)',
+                    'rgba(246, 194, 62, 0.8)',
+                    'rgba(231, 74, 59, 0.8)',
+                    'rgba(126, 87, 194, 0.8)'
+                ],
+                hoverBackgroundColor: [
+                    'rgba(78, 115, 223, 1)',
+                    'rgba(28, 200, 138, 1)',
+                    'rgba(246, 194, 62, 1)',
+                    'rgba(231, 74, 59, 1)',
+                    'rgba(126, 87, 194, 1)'
+                ],
+                hoverBorderColor: "rgba(234, 236, 244, 1)",
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            cutout: '70%',
+        },
+    });
+
+    // Create custom legend
+    const legendContainer = document.getElementById('issueLegend');
+    legendContainer.innerHTML = chartData.issues.labels.map((label, i) => `
+        <span class="me-3">
+            <i class="fas fa-circle" style="color: ${issuePieChart.data.datasets[0].backgroundColor[i]}"></i>
+            ${label} (${chartData.issues.data[i]})
+        </span>
+    `).join('');
+}
+
+function updateAlerts(alerts) {
+    const container = document.getElementById('alertsList');
+    container.innerHTML = alerts.map(alert => `
+        <a href="#" class="list-group-item list-group-item-action">
+            <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1 text-${alert.severity === 'high' ? 'danger' : 'warning'}">
+                    ${alert.topic}
+                </h6>
+                <small>${new Date(alert.created_at).toLocaleDateString()}</small>
+            </div>
+            <p class="mb-1">Affected areas: ${alert.affected_locations.join(', ')}</p>
+            <small>${alert.severity === 'high' ? 'High priority' : 'Medium priority'}</small>
+        </a>
+    `).join('');
+}
+
+function updatePolls(polls) {
+    const container = document.getElementById('pollsList');
+    container.innerHTML = polls.map(poll => `
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">${poll.question}</h5>
+                <div class="mb-3">
+                    ${poll.options.map((opt, i) => `
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio"
+                                   name="poll-${poll.id}" id="poll-${poll.id}-${i}">
+                            <label class="form-check-label" for="poll-${poll.id}-${i}">
+                                ${opt.text} (${opt.votes || 0} votes)
+                            </label>
+                        </div>
+                    `).join('')}
+                </div>
+                <button class="btn btn-sm btn-primary"
+                        onclick="votePoll(${poll.id}, 'poll-${poll.id}')">
+                    Vote
+                </button>
+                <small class="text-muted d-block mt-2">
+                    Ends: ${new Date(poll.expires_at).toLocaleDateString()}
+                </small>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Global function for voting
+window.votePoll = function(pollId, radioName) {
+    const selectedOption = document.querySelector(
+        `input[name="${radioName}"]:checked`);
+
+    if (!selectedOption) {
+        alert('Please select an option');
+        return;
+    }
+
+    const optionIndex = selectedOption.id.split('-').pop();
+
+    fetch(`/api/polls/${pollId}/vote`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ option_index: parseInt(optionIndex) })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+        } else {
+            alert('Vote recorded!');
+            fetchDashboardData(); // Refresh data
+        }
+    });
+};
+</script>
+{% endblock %}

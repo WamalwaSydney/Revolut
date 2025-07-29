@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Revolut & WDO Platform</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card shadow">
+                    <div class="card-body p-5">
+                        <div class="text-center mb-4">
+                            <i class="bi bi-person-plus text-primary" style="font-size: 3rem;"></i>
+                            <h3 class="card-title mt-3">Join Our Platform</h3>
+                            <p class="text-muted">Create your account to get started</p>
+                        </div>
+
+                        <!-- Alert container for messages -->
+                        <div id="alertContainer"></div>
+
+                        <form id="registerForm" action="/auth/register" method="POST">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="username" class="form-label">Username *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                        <input type="text" class="form-control" id="username" name="username" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="email" class="form-label">Email *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                        <input type="email" class="form-control" id="email" name="email" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="password" class="form-label">Password *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                        <input type="password" class="form-control" id="password" name="password" required minlength="6">
+                                    </div>
+                                    <div class="form-text">Minimum 6 characters</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="confirmPassword" class="form-label">Confirm Password *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="phone" class="form-label">Phone Number</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                                        <input type="tel" class="form-control" id="phone" name="phone" placeholder="+254700000000">
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="role" class="form-label">Account Type *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
+                                        <select class="form-select" id="role" name="role" required>
+                                            <option value="">Select your role</option>
+                                            <option value="citizen">Citizen</option>
+                                            <option value="cso">Civil Society Organization</option>
+                                            <option value="official">Government Official</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
+                                    <label class="form-check-label" for="terms">
+                                        I agree to the <a href="#" class="text-decoration-none">Terms of Service</a> and
+                                        <a href="#" class="text-decoration-none">Privacy Policy</a>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-person-plus"></i> Create Account
+                                </button>
+                            </div>
+                        </form>
+
+                        <div class="text-center mt-4">
+                            <p class="mb-0">Already have an account?
+                                <a href="/auth/login" class="text-decoration-none">Sign in here</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Function to show alerts
+        function showAlert(message, type = 'danger') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            alertContainer.innerHTML = alertHTML;
+
+            // Auto-dismiss success alerts after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    const alert = alertContainer.querySelector('.alert');
+                    if (alert) {
+                        const bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    }
+                }, 5000);
+            }
+        }
+
+        // Password strength checker
+        function checkPasswordStrength(password) {
+            let strength = 0;
+            const checks = {
+                length: password.length >= 8,
+                lowercase: /[a-z]/.test(password),
+                uppercase: /[A-Z]/.test(password),
+                numbers: /\d/.test(password),
+                special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+            };
+
+            Object.values(checks).forEach(check => {
+                if (check) strength++;
+            });
+
+            return { strength, checks };
+        }
+
+        // Real-time password validation
+        document.getElementById('password').addEventListener('input', function() {
+            const password = this.value;
+            const { strength, checks } = checkPasswordStrength(password);
+
+            // Remove existing feedback
+            const existingFeedback = this.parentNode.parentNode.querySelector('.password-feedback');
+            if (existingFeedback) {
+                existingFeedback.remove();
+            }
+
+            if (password.length > 0) {
+                const feedbackDiv = document.createElement('div');
+                feedbackDiv.className = 'password-feedback mt-2';
+
+                let strengthText = '';
+                let strengthClass = '';
+
+                if (strength < 2) {
+                    strengthText = 'Weak';
+                    strengthClass = 'text-danger';
+                } else if (strength < 4) {
+                    strengthText = 'Medium';
+                    strengthClass = 'text-warning';
+                } else {
+                    strengthText = 'Strong';
+                    strengthClass = 'text-success';
+                }
+
+                feedbackDiv.innerHTML = `
+                    <small class="${strengthClass}">Password strength: ${strengthText}</small>
+                `;
+
+                this.parentNode.parentNode.appendChild(feedbackDiv);
+            }
+        });
+
+        // Real-time confirm password validation
+        document.getElementById('confirmPassword').addEventListener('input', function() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = this.value;
+
+            // Remove existing feedback
+            const existingFeedback = this.parentNode.parentNode.querySelector('.confirm-password-feedback');
+            if (existingFeedback) {
+                existingFeedback.remove();
+            }
+
+            if (confirmPassword.length > 0) {
+                const feedbackDiv = document.createElement('div');
+                feedbackDiv.className = 'confirm-password-feedback mt-2';
+
+                if (password === confirmPassword) {
+                    feedbackDiv.innerHTML = '<small class="text-success"><i class="bi bi-check-circle"></i> Passwords match</small>';
+                    this.classList.remove('is-invalid');
+                    this.classList.add('is-valid');
+                } else {
+                    feedbackDiv.innerHTML = '<small class="text-danger"><i class="bi bi-x-circle"></i> Passwords do not match</small>';
+                    this.classList.remove('is-valid');
+                    this.classList.add('is-invalid');
+                }
+
+                this.parentNode.parentNode.appendChild(feedbackDiv);
+            } else {
+                this.classList.remove('is-valid', 'is-invalid');
+            }
+        });
+
+        // Form submission handler
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const terms = document.getElementById('terms').checked;
+
+            // Clear previous alerts
+            document.getElementById('alertContainer').innerHTML = '';
+
+            // Validation checks
+            if (password !== confirmPassword) {
+                showAlert('<i class="bi bi-exclamation-triangle"></i> Passwords do not match!');
+                return;
+            }
+
+            if (password.length < 6) {
+                showAlert('<i class="bi bi-exclamation-triangle"></i> Password must be at least 6 characters long!');
+                return;
+            }
+
+            if (!terms) {
+                showAlert('<i class="bi bi-exclamation-triangle"></i> You must agree to the Terms of Service and Privacy Policy!');
+                return;
+            }
+
+            const formData = new FormData(this);
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+
+            // Show loading state
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creating account...';
+            submitBtn.disabled = true;
+
+            // Simulate API call (replace with actual endpoint)
+            fetch(this.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.redirected) {
+                    // If redirected, follow the redirect
+                    window.location.href = response.url;
+                    return;
+                }
+
+                // Parse JSON response
+                return response.json().then(data => {
+                    if (!response.ok) {
+                        throw new Error(data.message || 'Registration failed');
+                    }
+                    return data;
+                });
+            })
+            .then(data => {
+                if (data) {
+                    // Show success message
+                    showAlert('<i class="bi bi-check-circle"></i> Account created successfully! Redirecting...', 'success');
+
+                    // Redirect after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = '/auth/login';
+                    }, 2000);
+                }
+            })
+            .catch(error => {
+                console.error('Registration error:', error);
+
+                // Show error message
+                let errorMessage = '<i class="bi bi-exclamation-triangle"></i> ';
+
+                if (error.message) {
+                    errorMessage += error.message;
+                } else if (error.toString().includes('NetworkError') || error.toString().includes('Failed to fetch')) {
+                    errorMessage += 'Network error. Please check your connection and try again.';
+                } else {
+                    errorMessage += 'An unexpected error occurred. Please try again.';
+                }
+
+                showAlert(errorMessage);
+            })
+            .finally(() => {
+                // Reset button state
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            });
+        });
+
+        // Email validation
+        document.getElementById('email').addEventListener('blur', function() {
+            const email = this.value;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (email && !emailRegex.test(email)) {
+                this.classList.add('is-invalid');
+
+                // Add error feedback if it doesn't exist
+                if (!this.parentNode.parentNode.querySelector('.invalid-feedback')) {
+                    const feedback = document.createElement('div');
+                    feedback.className = 'invalid-feedback';
+                    feedback.textContent = 'Please enter a valid email address.';
+                    this.parentNode.parentNode.appendChild(feedback);
+                }
+            } else {
+                this.classList.remove('is-invalid');
+                const feedback = this.parentNode.parentNode.querySelector('.invalid-feedback');
+                if (feedback) {
+                    feedback.remove();
+                }
+            }
+        });
+
+        // Phone number formatting (basic)
+        document.getElementById('phone').addEventListener('input', function() {
+            let value = this.value.replace(/\D/g, ''); // Remove non-digits
+
+            // Add country code if not present
+            if (value.length > 0 && !value.startsWith('254')) {
+                if (value.startsWith('0')) {
+                    value = '254' + value.substring(1);
+                } else if (value.startsWith('7') || value.startsWith('1')) {
+                    value = '254' + value;
+                }
+            }
+
+            // Format the number
+            if (value.startsWith('254')) {
+                value = '+' + value;
+            }
+
+            this.value = value;
+        });
+    </script>
+</body>
+</html>

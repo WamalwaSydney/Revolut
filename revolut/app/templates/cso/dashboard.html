@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mt-4">CSO Dashboard</h1>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Create New Poll</h6>
+                </div>
+                <div class="card-body">
+                    <form id="createPollForm">
+                        <div class="mb-3">
+                            <label class="form-label">Poll Question</label>
+                            <input type="text" class="form-control" id="pollQuestion" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Options (one per line)</label>
+                            <textarea class="form-control" id="pollOptions" rows="5" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Duration (days)</label>
+                            <input type="number" class="form-control" id="pollDuration" value="7" min="1" max="30">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Create Poll</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Your Recent Polls</h6>
+                </div>
+                <div class="card-body">
+                    <div id="pollsList">
+                        <!-- Dynamically loaded -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Load CSO's polls
+    fetch('/admin/polls?user=current')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('pollsList');
+            container.innerHTML = data.map(poll => `
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5>${poll.question}</h5>
+                        <ul class="mb-3">
+                            ${poll.options.map(opt => `<li>${opt.text} (${opt.votes} votes)</li>`).join('')}
+                        </ul>
+                        <small class="text-muted">
+                            Ends: ${new Date(poll.expires_at).toLocaleDateString()}
+                        </small>
+                    </div>
+                </div>
+            `).join('');
+        });
+
+    // Handle poll creation
+    document.getElementById('createPollForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const options = document.getElementById('pollOptions').value
+            .split('\n')
+            .filter(opt => opt.trim() !== '');
+
+        const pollData = {
+            question: document.getElementById('pollQuestion').value,
+            options: options,
+            expires_at: new Date(Date.now() +
+                parseInt(document.getElementById('pollDuration').value) * 24 * 60 * 60 * 1000)
+        };
+
+        fetch('/admin/polls', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(pollData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert('Poll created successfully!');
+            this.reset();
+            // Refresh polls list
+            document.dispatchEvent(new Event('DOMContentLoaded'));
+        });
+    });
+});
+</script>
+{% endblock %}

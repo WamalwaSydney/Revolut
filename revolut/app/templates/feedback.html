@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="bi bi-chat-left-text"></i> Submit Feedback</h4>
+                </div>
+                <div class="card-body">
+                    <form id="feedbackForm">
+                        <!-- Issue Linking Section -->
+                        <div class="mb-3">
+                            <label class="form-label">Link to Existing Issue (Optional)</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="issueSearch" placeholder="Search issues...">
+                                <button class="btn btn-outline-secondary" type="button" id="searchIssueBtn">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                            <div id="issueResults" class="mt-2 d-none">
+                                <div class="list-group" id="issueList"></div>
+                            </div>
+                            <input type="hidden" id="issueId">
+                        </div>
+
+                        <!-- Feedback Content -->
+                        <div class="mb-3">
+                            <label class="form-label">Your Feedback*</label>
+                            <textarea class="form-control" id="feedbackContent" rows="5" required></textarea>
+                        </div>
+
+                        <!-- Contact Info -->
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Phone (for SMS confirmation)</label>
+                                <input type="tel" class="form-control" id="contactNumber" placeholder="254700000000">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Location*</label>
+                                <select class="form-select" id="location" required>
+                                    <option value="">Select your area</option>
+                                    <option>Nairobi West</option>
+                                    <option>Mombasa Central</option>
+                                    <!-- More options -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-send"></i> Submit Feedback
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Active Issues Section -->
+            <div class="card shadow mt-4">
+                <div class="card-header bg-info text-white">
+                    <h4><i class="bi bi-exclamation-circle"></i> Active Issues in Your Area</h4>
+                </div>
+                <div class="card-body">
+                    <div class="list-group" id="activeIssues">
+                        <!-- Dynamically loaded -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Load active issues
+    fetch('/api/issues?location=' + encodeURIComponent('Nairobi West')) // Default location
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('activeIssues');
+            container.innerHTML = data.map(issue => `
+                <a href="#" class="list-group-item list-group-item-action"
+                   onclick="selectIssue('${issue.id}', '${issue.title.replace(/'/g, "\\'")}')">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">${issue.title}</h5>
+                        <small>${new Date(issue.created_at).toLocaleDateString()}</small>
+                    </div>
+                    <p class="mb-1">${issue.description.substring(0, 100)}...</p>
+                    <small>${issue.status}</small>
+                </a>
+            `).join('');
+        });
+
+    // Issue search functionality
+    document.getElementById('searchIssueBtn').addEventListener('click', searchIssues);
+    document.getElementById('issueSearch').addEventListener('keyup', function(e) {
+        if (e.key === 'Enter') searchIssues();
+    });
+
+    // Form submission
+    document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const formData = {
+            content: document.getElementById('feedbackContent').value,
+            location: document.getElementById('location').value,
+            contact: document.getElementById('contactNumber').value,
+            issue_id: document.getElementById('issueId').value || undefined
+        };
+
+        fetch('/api/feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(`Error: ${data.error}`);
+            } else {
+                alert('Feedback submitted successfully!');
+                if (formData.contact) {
+                    alert('SMS confirmation will be sent shortly');
+                }
+                this.reset();
+            }
+        });
+    });
+});
+
+function searchIssues() {
+    const query = document.getElementById('issueSearch').value;
+    if (!query) return;
+
+    fetch(`/api/issues?search=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('issueList');
+            const resultsDiv = document.getElementById('issueResults');
+
+            if (data.length === 0) {
+                container.innerHTML = '<div class="list-group-item">No issues found</div>';
+            } else {
+                container.innerHTML = data.map(issue => `
+                    <button type="button" class="list-group-item list-group-item-action"
+                            onclick="selectIssue('${issue.id}', '${issue.title.replace(/'/g, "\\'")}')">
+                        ${issue.title} (${issue.status})
+                    </button>
+                `).join('');
+            }
+
+            resultsDiv.classList.remove('d-none');
+        });
+}
+
+function selectIssue(id, title) {
+    document.getElementById('issueId').value = id;
+    document.getElementById('issueSearch').value = title;
+    document.getElementById('issueResults').classList.add('d-none');
+}
+
+// Add this to your existing feedback.html script section
+function loadActiveIssues() {
+    const location = document.getElementById('location').value || 'Nairobi West';
+
+    fetch(`/api/issues?location=${encodeURIComponent(location)}&status=all`)
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('activeIssues');
+            if (data.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center p-4">
+                        <p class="text-muted">No issues found in your area.</p>
+                        <a href="/issues/create" class="btn btn-warning">
+                            <i class="bi bi-plus-circle"></i> Report New Issue
+                        </a>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = data.map(issue => `
+                    <a href="#" class="list-group-item list-group-item-action"
+                       onclick="selectIssue('${issue.id}', '${issue.title.replace(/'/g, "\\'")}')">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">${issue.title}</h5>
+                            <div>
+                                <span class="badge bg-${getPriorityColor(issue.priority)}">${issue.priority}</span>
+                                <span class="badge bg-${getStatusColor(issue.status)}">${issue.status}</span>
+                            </div>
+                        </div>
+                        <p class="mb-1">${issue.description.substring(0, 100)}...</p>
+                        <small>
+                            ${issue.category} | ${new Date(issue.created_at).toLocaleDateString()} |
+                            ${issue.feedback_count} feedback
+                        </small>
+                    </a>
+                `).join('');
+            }
+        });
+}
+
+function getPriorityColor(priority) {
+    switch(priority) {
+        case 'Critical': return 'danger';
+        case 'High': return 'warning';
+        case 'Medium': return 'info';
+        case 'Low': return 'secondary';
+        default: return 'secondary';
+    }
+}
+
+function getStatusColor(status) {
+    switch(status) {
+        case 'Open': return 'primary';
+        case 'In Progress': return 'warning';
+        case 'Resolved': return 'success';
+        case 'Closed': return 'secondary';
+        default: return 'secondary';
+    }
+}
+
+// Update the location change handler
+document.getElementById('location').addEventListener('change', loadActiveIssues);
+</script>
+{% endblock %}

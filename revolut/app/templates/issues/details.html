@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Loading State -->
+    <div id="loadingState" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Loading issue details...</p>
+    </div>
+
+    <!-- Issue Content -->
+    <div id="issueContent" style="display: none;">
+        <!-- Back Button -->
+        <div class="mb-3">
+            <a href="/issues" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Issues
+            </a>
+        </div>
+
+        <!-- Issue Header -->
+        <div class="card shadow mb-4">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <h3 class="mb-0" id="issueTitle"></h3>
+                    </div>
+                    <div class="col-auto">
+                        <span id="issueStatus" class="badge fs-6"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <p id="issueDescription" class="card-text"></p>
+
+                <!-- Issue Metadata -->
+                <div class="row g-3 mt-3">
+                    <div class="col-md-3">
+                        <strong><i class="bi bi-geo-alt text-primary"></i> Location:</strong>
+                        <br><span id="issueLocation"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong><i class="bi bi-tag text-info"></i> Category:</strong>
+                        <br><span id="issueCategory"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong><i class="bi bi-flag text-warning"></i> Priority:</strong>
+                        <br><span id="issuePriority"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong><i class="bi bi-clock text-secondary"></i> Created:</strong>
+                        <br><span id="issueCreatedAt"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Feedback Section -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-chat-plus"></i> Add Your Feedback</h5>
+            </div>
+            <div class="card-body">
+                <form id="feedbackForm">
+                    <div class="mb-3">
+                        <label class="form-label">Your Feedback*</label>
+                        <textarea class="form-control" id="feedbackContent" rows="4"
+                                  placeholder="Share your thoughts, additional information, or updates about this issue..." required></textarea>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Your Location</label>
+                            <input type="text" class="form-control" id="feedbackLocation"
+                                   placeholder="Optional - helps track issue spread">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Contact (for updates)</label>
+                            <input type="tel" class="form-control" id="feedbackContact"
+                                   placeholder="254700000000">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Gender (optional)</label>
+                            <select class="form-select" id="feedbackGender">
+                                <option value="">Select</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-send"></i> Submit Feedback
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Existing Feedback -->
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-chat-square-text"></i> Community Feedback
+                    <span id="feedbackCount" class="badge bg-primary"></span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="feedbackContainer">
+                    <!-- Feedback will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorState" style="display: none;" class="text-center py-5">
+        <i class="bi bi-exclamation-triangle display-1 text-danger"></i>
+        <h4 class="text-danger mt-3">Issue Not Found</h4>
+        <p class="text-muted">The issue you're looking for doesn't exist or has been removed.</p>
+        <a href="/issues" class="btn btn-primary">
+            <i class="bi bi-arrow-left"></i> Back to Issues
+        </a>
+    </div>
+</div>
+
+<script>
+const issueId = {{ issue_id }};
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadIssueDetails();
+
+    // Set up form submission
+    document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        submitFeedback();
+    });
+});
+
+function loadIssueDetails() {
+    fetch(`/api/issues/${issueId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Issue not found');
+            }
+            return response.json();
+        })
+        .then(issue => {
+            displayIssueDetails(issue);
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('issueContent').style.display = 'block';
+        })
+        .catch(error => {
+            console.error('Error loading issue:', error);
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
+        });
+}
+
+function displayIssueDetails(issue) {
+    // Set issue details
+    document.getElementById('issueTitle').textContent = issue.title;
+    document.getElementById('issueDescription').textContent = issue.description;
+    document.getElementById('issueLocation').textContent = issue.location;
+    document.getElementById('issueCategory').textContent = issue.category;
+    document.getElementById('issuePriority').textContent = issue.priority;
+    document.getElementById('issueCreatedAt').textContent = formatDate(issue.created_at);
+
+    // Set status badge
+    const statusBadge = document.getElementById('issueStatus');
+    statusBadge.textContent = issue.status;
+    statusBadge.className = `badge fs-6 bg-${getStatusColor(issue.status)}`;
+
+    // Display feedback
+    displayFeedback(issue.feedback);
+    document.getElementById('feedbackCount').textContent = issue.feedback.length;
+}
+
+function displayFeedback(feedback) {
+    const container = document.getElementById('feedbackContainer');
+
+    if (feedback.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-chat-square display-4"></i>
+                <p class="mt-2">No feedback yet. Be the first to share your thoughts!</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = feedback.map((fb, index) => `
+        <div class="border-bottom ${index === feedback.length - 1 ? '' : 'mb-3 pb-3'}">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <strong>Community Member</strong>
+                    ${fb.location ? `<span class="badge bg-light text-dark ms-2"><i class="bi bi-geo-alt"></i> ${escapeHtml(fb.location)}</span>` : ''}
+                </div>
+                <div class="text-end">
+                    <small class="text-muted">${formatDate(fb.created_at)}</small>
+                    ${getSentimentBadge(fb.sentiment_score)}
+                </div>
+            </div>
+            <p class="mb-0">${escapeHtml(fb.content)}</p>
+        </div>
+    `).join('');
+}
+
+function submitFeedback() {
+    const content = document.getElementById('feedbackContent').value.trim();
+    const location = document.getElementById('feedbackLocation').value.trim();
+    const contact = document.getElementById('feedbackContact').value.trim();
+    const gender = document.getElementById('feedbackGender').value;
+
+    if (!content) {
+        alert('Please enter your feedback content');
+        return;
+    }
+
+    const feedbackData = {
+        content: content,
+        issue_id: issueId,
+        location: location || null,
+        contact: contact || null,
+        gender: gender || null,
+        source: 'web'
+    };
+
+    // Disable submit button
+    const submitBtn = document.querySelector('#feedbackForm button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Submitting...';
+
+    fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(feedbackData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert(`Error: ${data.error}`);
+        } else {
+            alert('Feedback submitted successfully! Thank you for your input.');
+            // Reset form
+            document.getElementById('feedbackForm').reset();
+            // Reload issue details to show new feedback
+            loadIssueDetails();
+        }
+    })
+    .catch(error => {
+        alert('Error submitting feedback. Please try again.');
+        console.error('Error:', error);
+    })
+    .finally(() => {
+        // Re-enable submit button
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
+}
+
+// Utility functions
+function escapeHtml(unsafe) {
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function getStatusColor(status) {
+    const colors = {
+        'Open': 'danger',
+        'In Progress': 'warning',
+        'Resolved': 'success',
+        'Closed': 'secondary'
+    };
+    return colors[status] || 'secondary';
+}
+
+function getSentimentBadge(score) {
+    if (score > 0.1) {
+        return '<span class="badge bg-success ms-2"><i class="bi bi-emoji-smile"></i> Positive</span>';
+    } else if (score < -0.1) {
+        return '<span class="badge bg-danger ms-2"><i class="bi bi-emoji-frown"></i> Negative</span>';
+    } else {
+        return '<span class="badge bg-secondary ms-2"><i class="bi bi-emoji-neutral"></i> Neutral</span>';
+    }
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) return 'Today';
+    if (diffDays === 2) return 'Yesterday';
+    if (diffDays <= 7) return `${diffDays - 1} days ago`;
+
+    return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+}
+</script>
+{% endblock %}
