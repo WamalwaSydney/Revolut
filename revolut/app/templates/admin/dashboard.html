@@ -195,6 +195,40 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        .feedback-card {
+            margin-bottom: 1rem;
+            border-left: 4px solid #e5e7eb;
+        }
+
+        .feedback-card.positive {
+            border-left-color: var(--success-color);
+        }
+
+        .feedback-card.negative {
+            border-left-color: var(--danger-color);
+        }
+
+        .feedback-card.neutral {
+            border-left-color: var(--warning-color);
+        }
+
+        .loading-spinner {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6b7280;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
     </style>
 </head>
 <body>
@@ -375,7 +409,7 @@
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h2 class="text-dark fw-bold">Feedback Management</h2>
                             <div class="btn-group">
-                                <button class="btn btn-outline-primary" onclick="filterFeedback('all')">All</button>
+                                <button class="btn btn-outline-primary active" onclick="filterFeedback('all')">All</button>
                                 <button class="btn btn-outline-success" onclick="filterFeedback('positive')">Positive</button>
                                 <button class="btn btn-outline-warning" onclick="filterFeedback('neutral')">Neutral</button>
                                 <button class="btn btn-outline-danger" onclick="filterFeedback('negative')">Negative</button>
@@ -383,8 +417,18 @@
                         </div>
 
                         <div id="feedback-list">
-                            <!-- Feedback items will be loaded here -->
+                            <div class="loading-spinner">
+                                <div class="loading"></div>
+                                <p class="mt-2">Loading feedback...</p>
+                            </div>
                         </div>
+
+                        <!-- Pagination -->
+                        <nav aria-label="Feedback pagination" id="feedback-pagination" style="display: none;">
+                            <ul class="pagination justify-content-center">
+                                <!-- Pagination will be loaded here -->
+                            </ul>
+                        </nav>
                     </div>
 
                     <!-- Officials Section -->
@@ -660,16 +704,18 @@
     <script>
         // Global variables
         let charts = {};
+        let currentFeedbackFilter = 'all';
+        let currentFeedbackPage = 1;
 
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
-        // Initialize the dashboard after Chart.js is confirmed loaded
-        waitForChartJs().then(() => {
-            initializeDashboard();
-            setupNavigation();
-            loadDashboardData();
+            // Initialize the dashboard after Chart.js is confirmed loaded
+            waitForChartJs().then(() => {
+                initializeDashboard();
+                setupNavigation();
+                loadDashboardData();
+            });
         });
-    });
 
         function waitForChartJs() {
             return new Promise((resolve) => {
@@ -769,7 +815,7 @@
             // Update statistics cards
             document.getElementById('total-users').textContent = data.total_users || '0';
             document.getElementById('active-polls').textContent = data.active_polls?.length || '0';
-            document.getElementById('feedback-count').textContent = data.feedback_stats?.reduce((sum, item) => sum + item.count, 0) || '0';
+            document.getElementById('feedback-count').textContent = data.total_feedback || '0';
             document.getElementById('officials-count').textContent = data.officials_count || '0';
         }
 
@@ -949,44 +995,183 @@
             }
         }
 
-        async function loadFeedback() {
-            try {
-                const response = await fetch('/api/feedback');
-                const feedback = await response.json();
+        async function loadFeedback(page = 1) {
+    try {
+        // Show loading state
+        const feedbackList = document.getElementById('feedback-list');
+        feedbackList.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading feedback data...</p>
+            </div>
+        `;
 
-                const feedbackList = document.getElementById('feedback-list');
-                feedbackList.innerHTML = feedback.map(item => `
-                    <div class="card mb-3">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div>
-                                    <span class="badge bg-${getSentimentColor(item.sentiment_score)}">${getSentimentLabel(item.sentiment_score)}</span>
-                                    <span class="badge bg-info ms-2">${item.location || 'Unknown Location'}</span>
-                                </div>
-                                <small class="text-muted">${new Date(item.created_at).toLocaleString()}</small>
-                            </div>
-                            <p class="mb-2">${item.content}</p>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <small class="text-muted">
-                                    Language: ${item.language || 'en'} |
-                                    Source: ${item.source || 'web'}
-                                </small>
-                                <div>
-                                    <button class="btn btn-sm btn-outline-primary" onclick="viewFeedback(${item.id})">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-success" onclick="respondToFeedback(${item.id})">
-                                        <i class="bi bi-reply"></i>
-                                    </button>
-                                </div>
-                            </div>
+        // Build request URL with pagination and filters
+        let url = `/api/feedback?page=${page}&per_page=10`;
+
+        // Add sentiment filter if active
+        if (currentFeedbackFilter && currentFeedbackFilter !== 'all') {
+            url += `&sentiment=${currentFeedbackFilter}`;
+        }
+
+        // Add authentication headers if needed
+        const headers = {
+            'Content-Type': 'application/json'
+            // Uncomment if authentication is required
+            // 'Authorization': 'Bearer ' + localStorage.getItem('authToken')
+        };
+
+        const response = await fetch(url, { headers });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log("Feedback API Response:", data);
+
+        // Check if we received valid feedback data
+        if (!data.feedback || !Array.isArray(data.feedback)) {
+            throw new Error("Invalid feedback data structure received");
+        }
+
+        if (data.feedback.length === 0) {
+            feedbackList.innerHTML = `
+                <div class="alert alert-info">
+                    No feedback items found matching your criteria.
+                </div>
+            `;
+            return;
+        }
+
+        // Render feedback items
+        feedbackList.innerHTML = data.feedback.map(item => `
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <span class="badge bg-${getSentimentColor(item.sentiment_score)}">
+                                ${getSentimentLabel(item.sentiment_score)}
+                            </span>
+                            ${item.location ? `
+                                <span class="badge bg-info ms-2">${item.location}</span>
+                            ` : ''}
+                            ${item.issue_id ? `
+                                <span class="badge bg-secondary ms-2">Issue #${item.issue_id}</span>
+                            ` : ''}
+                        </div>
+                        <small class="text-muted">
+                            ${item.created_at ? new Date(item.created_at).toLocaleString() : ''}
+                        </small>
+                    </div>
+                    <p class="mb-2">${item.content || 'No content provided'}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            ${item.source ? `Source: ${item.source} | ` : ''}
+                            ${item.is_processed ? 'Processed' : 'Pending'}
+                        </small>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewFeedback(${item.id})">
+                                <i class="bi bi-eye"></i> View
+                            </button>
+                            <button class="btn btn-sm btn-outline-success ms-2" onclick="respondToFeedback(${item.id})">
+                                <i class="bi bi-reply"></i> Respond
+                            </button>
                         </div>
                     </div>
-                `).join('');
-            } catch (error) {
-                console.error('Error loading feedback:', error);
-                showAlert('Error loading feedback', 'danger');
+                </div>
+            </div>
+        `).join('');
+
+        // Add pagination controls if needed
+        if (data.pages > 1) {
+            feedbackList.innerHTML += `
+                <nav aria-label="Feedback pagination">
+                    <ul class="pagination justify-content-center mt-4">
+                        <li class="page-item ${data.current_page === 1 ? 'disabled' : ''}">
+                            <a class="page-link" href="#" onclick="loadFeedbackPage(${data.current_page - 1})">Previous</a>
+                        </li>
+                        ${Array.from({length: data.pages}, (_, i) => `
+                            <li class="page-item ${i + 1 === data.current_page ? 'active' : ''}">
+                                <a class="page-link" href="#" onclick="loadFeedbackPage(${i + 1})">${i + 1}</a>
+                            </li>
+                        `).join('')}
+                        <li class="page-item ${data.current_page === data.pages ? 'disabled' : ''}">
+                            <a class="page-link" href="#" onclick="loadFeedbackPage(${data.current_page + 1})">Next</a>
+                        </li>
+                    </ul>
+                </nav>
+            `;
+        }
+
+    } catch (error) {
+        console.error('Error loading feedback:', error);
+        const feedbackList = document.getElementById('feedback-list');
+        feedbackList.innerHTML = `
+            <div class="alert alert-danger">
+                Failed to load feedback: ${error.message}
+                <button class="btn btn-sm btn-outline-primary mt-2" onclick="loadFeedback()">
+                    <i class="bi bi-arrow-clockwise"></i> Try Again
+                </button>
+            </div>
+        `;
+    }
+}
+
+// // Helper function for pagination
+// function loadFeedbackPage(page) {
+//     currentFeedbackPage = page;
+//     loadFeedback(page);
+// }
+
+        function updateFeedbackPagination(data) {
+            const paginationContainer = document.getElementById('feedback-pagination');
+
+            if (data.pages <= 1) {
+                paginationContainer.style.display = 'none';
+                return;
             }
+
+            paginationContainer.style.display = 'block';
+            const pagination = paginationContainer.querySelector('.pagination');
+
+            let paginationHtml = '';
+
+            // Previous button
+            if (data.current_page > 1) {
+                paginationHtml += `
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="loadFeedback(${data.current_page - 1}); return false;">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                `;
+            }
+
+            // Page numbers
+            for (let i = 1; i <= Math.min(data.pages, 10); i++) {
+                const isActive = i === data.current_page;
+                paginationHtml += `
+                    <li class="page-item ${isActive ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="loadFeedback(${i}); return false;">${i}</a>
+                    </li>
+                `;
+            }
+
+            // Next button
+            if (data.current_page < data.pages) {
+                paginationHtml += `
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="loadFeedback(${data.current_page + 1}); return false;">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                `;
+            }
+
+            pagination.innerHTML = paginationHtml;
         }
 
         async function loadOfficials() {
@@ -1090,6 +1275,30 @@
             if (score > 0.1) return 'Positive';
             if (score < -0.1) return 'Negative';
             return 'Neutral';
+        }
+
+        function getSentimentClass(score) {
+            if (score > 0.1) return 'positive';
+            if (score < -0.1) return 'negative';
+            return 'neutral';
+        }
+
+        function formatDate(dateString) {
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleString();
+            } catch (e) {
+                return dateString;
+            }
+        }
+
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
         }
 
         function generateStarRating(rating) {
@@ -1299,9 +1508,10 @@
             });
             event.target.classList.add('active');
 
-            // Filter feedback items (implementation depends on your needs)
-            console.log('Filtering feedback by:', type);
-            loadFeedback(); // Reload with filter
+            // Set current filter and reload feedback
+            currentFeedbackFilter = type;
+            currentFeedbackPage = 1;
+            loadFeedback(1);
         }
 
         function logout() {

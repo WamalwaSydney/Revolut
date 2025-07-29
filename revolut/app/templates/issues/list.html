@@ -94,11 +94,13 @@ function loadIssues(page = 1) {
     });
 
     fetch(`/api/issues?${params.toString()}`)
-        .then(response => response.json())
-        .then(data => {
-            displayIssues(data);
-            currentPage = page;
-        })
+    .then(response => response.json())
+    .then(data => {
+        console.log('API response:', data);
+        displayIssues(data.issues || []);
+        currentPage = page;
+        totalPages = data.total_pages || 1;
+    })
         .catch(error => {
             console.error('Error loading issues:', error);
             document.getElementById('issuesContainer').innerHTML = `

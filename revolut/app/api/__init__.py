@@ -4,6 +4,7 @@ from app import db
 from app.models import UserFeedback, Poll, Alert, Role, User, Issue, Official
 from datetime import datetime
 import traceback
+from flask_login import current_user
 
 api = Blueprint('api', __name__, url_prefix='/api')
 
@@ -37,7 +38,7 @@ def submit_feedback():
 
         # Create feedback
         feedback = UserFeedback(
-            user_id=data.get('user_id', 'anonymous'),
+            user_id = current_user.id if current_user.is_authenticated else 'anonymous',
             content=content,
             issue_id=issue_id,
             location=data.get('location', '').strip() if data.get('location') else None,
@@ -156,9 +157,9 @@ def create_issue():
         if missing_fields:
             return jsonify({"error": f"Missing required fields: {', '.join(missing_fields)}"}), 400
 
-        title = data.get('title', '').strip()
-        description = data.get('description', '').strip()
-        location = data.get('location', '').strip()
+        title = str(data.get('title') or '').strip()
+        description = str(data.get('description') or '').strip()
+        location = str(data.get('location') or '').strip()
 
         # Additional validation
         if len(title) < 5:
@@ -174,7 +175,7 @@ def create_issue():
             category=data.get('category', 'General'),
             priority=data.get('priority', 'Medium'),
             status='Open',
-            created_by=data.get('user_id', 'anonymous'),
+            created_by=current_user.id if current_user.is_authenticated else None,
             contact=data.get('contact', '').strip() if data.get('contact') else None,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow()
