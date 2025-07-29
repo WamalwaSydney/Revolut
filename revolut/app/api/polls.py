@@ -127,12 +127,12 @@ def vote_on_poll(poll_id):
 
         # Validate vote
         option_id = data.get('option_id')
-        if not option_id:
+        if option_id is None:
             return jsonify({"error": "Option ID is required"}), 400
 
         try:
             option_id = int(option_id)
-        except ValueError:
+        except (ValueError, TypeError):
             return jsonify({"error": "Invalid option ID"}), 400
 
         # Find the option and increment vote count
@@ -150,13 +150,26 @@ def vote_on_poll(poll_id):
         db.session.merge(poll)
         db.session.commit()
 
-        # Calculate total votes for percentage
+        # Calculate total votes and percentages
         total_votes = sum(opt['votes'] for opt in poll.options)
+        
+        # Add percentages to options
+        options_with_percentage = []
+        for option in poll.options:
+            percentage = (option['votes'] / total_votes * 100) if total_votes > 0 else 0
+            options_with_percentage.append({
+                **option,
+                "percentage": round(percentage, 1)
+            })
 
         return jsonify({
-            "status": "success",
+            "status": "success", 
             "message": "Vote recorded successfully",
-            "total_votes": total_votes,
+            "updated_poll": {
+                "id": poll.id,
+                "total_votes": total_votes,
+                "options": options_with_percentage
+            },
             "selected_option": option_id
         })
 

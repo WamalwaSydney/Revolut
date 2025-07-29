@@ -163,7 +163,7 @@ def health_check():
     return jsonify({'status': 'healthy', 'service': 'revolut-wdo'})
 
 @main.route('/polls/create')
-@login_required
+@login_required 
 @role_required('cso')  # Only CSOs can create polls
 def create_poll_page():
     """Render poll creation page"""
