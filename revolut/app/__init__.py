@@ -31,18 +31,15 @@ def create_app():
         from app.models import User
         return User.query.get(int(user_id))
 
-    # Register blueprints
+    # Register Blueprints
     from app.routes import main
     from app.auth import auth_bp
-    from app.admin import admin_bp
-
-    # Register API blueprints
     from app.api.polls import polls_bp
-
+    from app.api.admin import admin_bp
 
     app.register_blueprint(main)
-    app.register_blueprint(auth_bp, url_prefix='/auth')
-    app.register_blueprint(admin_bp, url_prefix='/admin')
+    app.register_blueprint(auth_bp)
     app.register_blueprint(polls_bp)
+    app.register_blueprint(admin_bp)
 
     return app

@@ -259,7 +259,7 @@ def delete_official(official_id):
         return jsonify({'error': str(e)}), 500
 
 # Poll Management Routes
-@admin_bp.route('/api/polls/results')
+@admin_bp.route('/polls/results')
 @login_required
 @role_required('admin')
 def get_poll_results():
@@ -301,7 +301,7 @@ def get_poll_results():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@admin_bp.route('/api/polls', methods=['POST'])
+@admin_bp.route('/polls', methods=['POST'])
 @login_required
 @role_required('admin')
 def create_poll():
@@ -343,7 +343,7 @@ def create_poll():
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-@admin_bp.route('/api/polls/<int:poll_id>', methods=['PUT'])
+@admin_bp.route('/polls/<int:poll_id>', methods=['PUT'])
 @login_required
 @role_required('admin')
 def update_poll(poll_id):
@@ -364,7 +364,7 @@ def update_poll(poll_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-@admin_bp.route('/api/polls/<int:poll_id>', methods=['DELETE'])
+@admin_bp.route('/polls/<int:poll_id>', methods=['DELETE'])
 @login_required
 @role_required('admin')
 def delete_poll(poll_id):
