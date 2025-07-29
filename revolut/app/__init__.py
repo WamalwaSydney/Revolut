@@ -35,11 +35,11 @@ def create_app():
     from app.routes import main
     from app.auth import auth_bp
     from app.admin import admin_bp
-    from app.api.polls import polls_api
+    from app.api.polls import polls_bp
 
     app.register_blueprint(main)
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(admin_bp)
-    app.register_blueprint(polls_api, url_prefix='/api')
+    app.register_blueprint(polls_bp, url_prefix='/api')
 
     return app
