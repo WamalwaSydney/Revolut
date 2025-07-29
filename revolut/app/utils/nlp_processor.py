@@ -5,7 +5,10 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 import nltk
 
+nltk.download('vader_lexicon')
+
 sia = SentimentIntensityAnalyzer()
+
 
 def process_feedback(feedback_id):
     feedback = UserFeedback.query.get(feedback_id)
@@ -21,14 +24,18 @@ def process_feedback(feedback_id):
     # Tagging
     words = word_tokenize(text.lower())
     stop_words = set(stopwords.words('english'))
-    filtered_words = [word for word in words if word.isalnum() and word not in stop_words]
+    filtered_words = [
+        word for word in words if word.isalnum() and word not in stop_words
+    ]
 
     tags = []
     if any(word in ['water', 'pipe', 'supply'] for word in filtered_words):
         tags.append('water_supply')
-    if any(word in ['road', 'construction', 'pothole'] for word in filtered_words):
+    if any(word in ['road', 'construction', 'pothole']
+           for word in filtered_words):
         tags.append('infrastructure')
-    if any(word in ['health', 'hospital', 'clinic'] for word in filtered_words):
+    if any(word in ['health', 'hospital', 'clinic']
+           for word in filtered_words):
         tags.append('healthcare')
 
     feedback.tags = tags
