@@ -223,6 +223,12 @@ def handle_login():
             (User.username == data['username']) | (User.email == data['username'])
         ).first()
 
+        print(f"Login attempt for: {data['username']}")
+        print(f"User found: {user is not None}")
+        if user:
+            print(f"Password check: {user.check_password(data['password'])}")
+            print(f"User active: {user.active}")
+
         if not user or not user.check_password(data['password']):
             error_msg = "Invalid username or password"
             if request.is_json:

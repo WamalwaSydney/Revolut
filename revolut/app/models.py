@@ -2,7 +2,7 @@ from app import db
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import JSON
 
 # Association table for many-to-many roles
 user_roles = db.Table('user_roles',
@@ -54,13 +54,15 @@ class UserFeedback(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.String(50), default='anonymous')
     content = db.Column(db.Text, nullable=False)
-    issue_id = db.Column(db.Integer, db.ForeignKey('issue.id'), nullable=True)  # Add this line
+    issue_id = db.Column(db.Integer, db.ForeignKey('issue.id'), nullable=True)
     location = db.Column(db.String(100))
     gender = db.Column(db.String(10))
     contact = db.Column(db.String(20))
     language = db.Column(db.String(10), default='en')
     source = db.Column(db.String(20), default='web')
     sentiment_score = db.Column(db.Float, default=0.0)
+    tags = db.Column(JSON)
+    is_processed = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Issue(db.Model):
@@ -85,7 +87,7 @@ class Official(db.Model):
     position = db.Column(db.String(100), nullable=False)
     constituency = db.Column(db.String(100), nullable=False)
     department = db.Column(db.String(100))
-    ratings = db.Column(JSONB)
+    ratings = db.Column(JSON)
     average_score = db.Column(db.Float)
     rating_count = db.Column(db.Integer, default=0)
     last_updated = db.Column(db.DateTime, default=datetime.utcnow)
@@ -93,7 +95,7 @@ class Official(db.Model):
 class Poll(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     question = db.Column(db.Text, nullable=False)
-    options = db.Column(JSONB, nullable=False)
+    options = db.Column(JSON, nullable=False)
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     expires_at = db.Column(db.DateTime)
@@ -103,7 +105,7 @@ class Alert(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     topic = db.Column(db.String(100), nullable=False)
     severity = db.Column(db.String(20), nullable=False)
-    affected_locations = db.Column(JSONB)
+    affected_locations = db.Column(JSON)
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user = db.relationship('User', backref=db.backref('alerts', lazy='dynamic'))

@@ -8,6 +8,8 @@ app = create_app()
 # Create tables and initial data
 with app.app_context():
     try:
+        # Drop all tables and recreate to fix JSONB issues
+        db.drop_all()
         db.create_all()
         
         # Create roles if they don't exist
