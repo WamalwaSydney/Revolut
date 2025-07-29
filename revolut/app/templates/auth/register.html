@@ -352,6 +352,94 @@
 
             this.value = value;
         });
+
+        // Function to clear alerts
+        function clearAlerts() {
+            const alertContainer = document.getElementById('alertContainer');
+            alertContainer.innerHTML = '';
+        }
+
+        // Function to validate form
+        function validateForm() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const terms = document.getElementById('terms').checked;
+
+            // Clear previous alerts
+            clearAlerts();
+
+            // Validation checks
+            if (password !== confirmPassword) {
+                showAlert('danger', '<i class="bi bi-exclamation-triangle"></i> Passwords do not match!');
+                return false;
+            }
+
+            if (password.length < 6) {
+                showAlert('danger', '<i class="bi bi-exclamation-triangle"></i> Password must be at least 6 characters long!');
+                return false;
+            }
+
+            if (!terms) {
+                showAlert('danger', '<i class="bi bi-exclamation-triangle"></i> You must agree to the Terms of Service and Privacy Policy!');
+                return false;
+            }
+
+            return true;
+        }
+
+        // Form submission
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // Clear previous alerts
+            clearAlerts();
+
+            // Validate form
+            if (!validateForm()) {
+                return;
+            }
+
+            try {
+                const formData = new FormData(this);
+                const data = Object.fromEntries(formData.entries());
+
+                // Add terms acceptance
+                data.terms = document.getElementById('terms').checked;
+
+                const response = await fetch('/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
+                        showAlert('success', result.message || 'Registration successful! Redirecting to login...');
+                        setTimeout(() => {
+                            window.location.href = '/auth/login';
+                        }, 2000);
+                    } else {
+                        showAlert('danger', result.error || 'Registration failed. Please try again.');
+                    }
+                } else {
+                    // Handle HTML response (likely an error page)
+                    if (response.status === 404) {
+                        showAlert('danger', 'Registration service not found. Please contact support.');
+                    } else {
+                        showAlert('danger', `Server error (${response.status}). Please try again.`);
+                    }
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                showAlert('danger', 'An unexpected error occurred. Please try again.');
+            }
+        });
     </script>
 </body>
 </html>
