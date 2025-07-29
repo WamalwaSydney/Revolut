@@ -1,0 +1,8 @@
+modules = ["python-3.12", "cpp-clang14", "web", "c-clang14"]
+run = "flask run"
+
+[nix]
+channel = "stable-25_05"
+
+[deployment]
+run = ["sh", "-c", "flask run"]
