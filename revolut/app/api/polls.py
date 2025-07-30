@@ -1,4 +1,4 @@
-# app/api/polls.py - COMPLETELY FIXED Poll Management System
+# app/api/polls.py - FIXED Poll Management System
 from flask import Blueprint, request, jsonify, current_app
 from flask_login import login_required, current_user
 from app import db
@@ -7,7 +7,8 @@ from app.auth import role_required
 from datetime import datetime, timedelta
 import re
 
-polls_bp = Blueprint('polls', __name__, url_prefix='/api/polls')
+# FIXED: Remove the url_prefix to avoid double /api/polls path
+polls_bp = Blueprint('polls', __name__)
 
 def validate_poll_data(data):
     """Validate poll creation data"""
@@ -51,7 +52,7 @@ def fix_poll_options_format(poll):
     """Fix poll options format to ensure they have proper IDs"""
     if not isinstance(poll.options, list):
         poll.options = []
-        return
+        return poll
 
     fixed_options = []
     for i, option in enumerate(poll.options):
@@ -77,7 +78,7 @@ def fix_poll_options_format(poll):
     poll.options = fixed_options
     return poll
 
-@polls_bp.route('', methods=['POST'])
+@polls_bp.route('/api/polls', methods=['POST'])
 @login_required
 @role_required('cso')  # Only CSOs and admins can create polls
 def create_poll():
@@ -141,7 +142,7 @@ def create_poll():
         current_app.logger.error(f"Error creating poll: {str(e)}")
         return jsonify({"error": "Failed to create poll"}), 500
 
-@polls_bp.route('/<int:poll_id>/vote', methods=['POST'])
+@polls_bp.route('/api/polls/<int:poll_id>/vote', methods=['POST'])
 def vote_on_poll(poll_id):
     """Submit a vote for a poll - COMPLETELY FIXED VERSION"""
     try:
@@ -238,45 +239,72 @@ def vote_on_poll(poll_id):
         current_app.logger.error(f"Error voting on poll {poll_id}: {str(e)}")
         return jsonify({"error": f"Failed to record vote: {str(e)}"}), 500
 
-@polls_bp.route('', methods=['GET'])
-def get_active_polls():
-    """Get all active polls"""
+# FIXED: Show all polls to citizens, not just active ones
+@polls_bp.route('/api/polls', methods=['GET'])
+def get_polls():
+    """Get all polls for citizens"""
     try:
-        # Get active polls (not expired)
-        active_polls = Poll.query.filter(
-            Poll.expires_at > datetime.utcnow()
-        ).order_by(Poll.created_at.desc()).all()
+        # Get all polls, ordered by creation date (newest first)
+        all_polls = Poll.query.order_by(Poll.created_at.desc()).all()
+
+        # If no polls exist, return empty response
+        if not all_polls:
+            return jsonify({
+                "polls": [],
+                "count": 0
+            })
 
         polls_data = []
-        for poll in active_polls:
-            # Fix poll options format
-            poll = fix_poll_options_format(poll)
+        for poll in all_polls:
+            try:
+                # Fix poll options format
+                poll = fix_poll_options_format(poll)
 
-            # Calculate total votes
-            total_votes = sum(opt.get('votes', 0) for opt in poll.options if isinstance(opt, dict))
+                # Calculate total votes
+                total_votes = sum(opt.get('votes', 0) for opt in poll.options if isinstance(opt, dict))
 
-            # Add percentage to each option
-            options_with_percentage = []
-            for option in poll.options:
-                if not isinstance(option, dict):
-                    continue
+                # Check if poll is still active
+                is_active = True
+                days_remaining = 0
+                if poll.expires_at:
+                    now = datetime.utcnow()
+                    is_active = poll.expires_at > now
+                    if is_active:
+                        days_remaining = (poll.expires_at - now).days
+                    else:
+                        days_remaining = 0
 
-                votes = option.get('votes', 0)
-                percentage = (votes / total_votes * 100) if total_votes > 0 else 0
-                options_with_percentage.append({
-                    **option,
-                    "percentage": round(percentage, 1)
-                })
+                # Add percentage to each option
+                options_with_percentage = []
+                for option in poll.options:
+                    if not isinstance(option, dict):
+                        continue
 
-            polls_data.append({
-                "id": poll.id,
-                "question": poll.question,
-                "options": options_with_percentage,
-                "total_votes": total_votes,
-                "expires_at": poll.expires_at.isoformat(),
-                "created_at": poll.created_at.isoformat(),
-                "days_remaining": (poll.expires_at - datetime.utcnow()).days
-            })
+                    votes = option.get('votes', 0)
+                    percentage = (votes / total_votes * 100) if total_votes > 0 else 0
+                    options_with_percentage.append({
+                        "id": option.get('id', 0),
+                        "text": option.get('text', ''),
+                        "votes": votes,
+                        "percentage": round(percentage, 1)
+                    })
+
+                poll_data = {
+                    "id": poll.id,
+                    "question": poll.question,
+                    "options": options_with_percentage,
+                    "total_votes": total_votes,
+                    "expires_at": poll.expires_at.isoformat() if poll.expires_at else None,
+                    "created_at": poll.created_at.isoformat() if poll.created_at else None,
+                    "days_remaining": days_remaining,
+                    "is_active": is_active
+                }
+                
+                polls_data.append(poll_data)
+                
+            except Exception as e:
+                current_app.logger.error(f"Error processing poll {poll.id}: {str(e)}")
+                continue
 
         return jsonify({
             "polls": polls_data,
@@ -285,9 +313,13 @@ def get_active_polls():
 
     except Exception as e:
         current_app.logger.error(f"Error fetching polls: {str(e)}")
-        return jsonify({"error": "Failed to fetch polls"}), 500
+        return jsonify({
+            "error": "Failed to fetch polls",
+            "polls": [],
+            "count": 0
+        }), 500
 
-@polls_bp.route('/<int:poll_id>', methods=['GET'])
+@polls_bp.route('/api/polls/<int:poll_id>', methods=['GET'])
 def get_poll_details(poll_id):
     """Get detailed information about a specific poll"""
     try:
@@ -313,15 +345,16 @@ def get_poll_details(poll_id):
 
         # Get creator information
         creator = User.query.get(poll.created_by)
+        is_active = poll.expires_at > datetime.utcnow() if poll.expires_at else True
 
         return jsonify({
             "id": poll.id,
             "question": poll.question,
             "options": options_with_stats,
             "total_votes": total_votes,
-            "expires_at": poll.expires_at.isoformat(),
-            "created_at": poll.created_at.isoformat(),
-            "is_active": poll.expires_at > datetime.utcnow(),
+            "expires_at": poll.expires_at.isoformat() if poll.expires_at else None,
+            "created_at": poll.created_at.isoformat() if poll.created_at else None,
+            "is_active": is_active,
             "creator": {
                 "username": creator.username if creator else "Unknown",
                 "roles": creator.get_role_names() if creator else []
@@ -332,7 +365,9 @@ def get_poll_details(poll_id):
         current_app.logger.error(f"Error fetching poll {poll_id}: {str(e)}")
         return jsonify({"error": "Failed to fetch poll details"}), 500
 
-@polls_bp.route('/results', methods=['GET'])
+@polls_bp.route('/api/polls/results', methods=['GET'])
+@login_required
+@role_required('cso')
 def get_poll_results():
     """Get results for all polls (admin/CSO access)"""
     try:
@@ -367,7 +402,7 @@ def get_poll_results():
                 "options": options_with_stats,
                 "total_votes": total_votes,
                 "expires_at": poll.expires_at.isoformat() if poll.expires_at else None,
-                "created_at": poll.created_at.isoformat(),
+                "created_at": poll.created_at.isoformat() if poll.created_at else None,
                 "is_active": is_active,
                 "status": "Active" if is_active else "Expired"
             })
@@ -383,7 +418,7 @@ def get_poll_results():
         return jsonify({"error": "Failed to fetch poll results"}), 500
 
 # Database migration script to fix existing polls
-@polls_bp.route('/fix-existing-polls', methods=['POST'])
+@polls_bp.route('/api/polls/fix-existing-polls', methods=['POST'])
 @login_required
 @role_required('admin')  # Only admins can run this
 def fix_existing_polls():
