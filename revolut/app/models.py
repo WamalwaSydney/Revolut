@@ -115,4 +115,3 @@ class Alert(db.Model):
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user = db.relationship('User', backref=db.backref('alerts', lazy='dynamic'))
-
