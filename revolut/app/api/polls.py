@@ -417,6 +417,33 @@ def get_poll_results():
         current_app.logger.error(f"Error fetching poll results: {str(e)}")
         return jsonify({"error": "Failed to fetch poll results"}), 500
 
+@polls_bp.route('/api/polls/<int:poll_id>', methods=['DELETE'])
+@login_required
+@role_required('cso')  # CSOs and admins can delete polls
+def delete_poll(poll_id):
+    """Delete a specific poll"""
+    try:
+        poll = Poll.query.get_or_404(poll_id)
+        
+        # Check if user can delete this poll (creator or admin)
+        if poll.created_by != current_user.id and 'admin' not in current_user.get_role_names():
+            return jsonify({"error": "You don't have permission to delete this poll"}), 403
+        
+        db.session.delete(poll)
+        db.session.commit()
+        
+        current_app.logger.info(f"Poll {poll_id} deleted by user {current_user.id}")
+        
+        return jsonify({
+            "status": "success",
+            "message": "Poll deleted successfully"
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error deleting poll {poll_id}: {str(e)}")
+        return jsonify({"error": "Failed to delete poll"}), 500
+
 # Database migration script to fix existing polls
 @polls_bp.route('/api/polls/fix-existing-polls', methods=['POST'])
 @login_required
