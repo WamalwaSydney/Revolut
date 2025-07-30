@@ -1,4 +1,4 @@
-# app/__init__.py
+# app/__init__.py - Updated for production deployment
 from flask import Flask, request, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, current_user
@@ -15,9 +15,19 @@ babel = Babel()
 def create_app():
     app = Flask(__name__)
 
-    # Configuration
+    # Configuration - Updated for production
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///revolut.db')
+
+    # Database configuration - Handle both development and production
+    database_url = os.environ.get('DATABASE_URL')
+    if database_url:
+        # Fix for render's postgres URL format
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+    else:
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///revolut.db'
+
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     # Babel configuration
@@ -69,12 +79,27 @@ def create_app():
     from app.auth import auth_bp
     from app.api import api
     from app.api.polls import polls_bp
-    from app.api.admin import admin_bp
+    from app.admin import admin_bp  # Note: using admin.py instead of api.admin
 
     app.register_blueprint(main)
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(api)  # Register the main API blueprint
     app.register_blueprint(polls_bp)
     app.register_blueprint(admin_bp, url_prefix='/admin')
+
+    # Add error handlers for production
+    @app.errorhandler(404)
+    def not_found_error(error):
+        return {'error': 'Not found'}, 404
+
+    @app.errorhandler(500)
+    def internal_error(error):
+        db.session.rollback()
+        return {'error': 'Internal server error'}, 500
+
+    # Health check route for Render
+    @app.route('/health')
+    def health_check():
+        return {'status': 'healthy', 'service': 'revolut-wdo'}
 
     return app
