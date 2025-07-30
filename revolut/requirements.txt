@@ -8,3 +8,4 @@ python-dotenv==1.0.0
 psycopg2-binary==2.9.6
 Flask-Babel==2.0.0
 babel==2.12.1
+Werkzeug==2.3.8
