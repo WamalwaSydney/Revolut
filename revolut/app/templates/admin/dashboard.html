@@ -947,53 +947,46 @@
         }
 
         async function loadPolls() {
-            try {
-                const response = await fetch('/api/polls/results');
-                const data = await response.json();
-
-                const pollsGrid = document.getElementById('polls-grid');
-                pollsGrid.innerHTML = data.polls.map(poll => `
-                    <div class="col-md-6 mb-4">
-                        <div class="card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h6 class="mb-0">${poll.question}</h6>
-                                <span class="badge bg-${poll.is_active ? 'success' : 'secondary'}">${poll.status}</span>
-                            </div>
-                            <div class="card-body">
-                                ${poll.options.map(option => `
-                                    <div class="mb-2">
-                                        <div class="d-flex justify-content-between mb-1">
-                                            <span>${option.text}</span>
-                                            <span class="text-muted">${option.votes} votes (${option.percentage}%)</span>
-                                        </div>
-                                        <div class="progress" style="height: 6px;">
-                                            <div class="progress-bar" role="progressbar" style="width: ${option.percentage}%"></div>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                                <div class="mt-3">
-                                    <small class="text-muted">
-                                        Total votes: ${poll.total_votes} |
-                                        Created: ${new Date(poll.created_at).toLocaleDateString()}
-                                    </small>
-                                </div>
-                            </div>
-                            <div class="card-footer">
-                                <button class="btn btn-sm btn-outline-primary me-2" onclick="editPoll(${poll.id})">
-                                    <i class="bi bi-pencil"></i> Edit
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deletePoll(${poll.id})">
-                                    <i class="bi bi-trash"></i> Delete
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
-            } catch (error) {
-                console.error('Error loading polls:', error);
-                showAlert('Error loading polls', 'danger');
+    try {
+        console.log('Loading polls from /api/polls...');
+        
+        // FIXED: Use /api/polls instead of /admin/polls
+        const response = await fetch('/api/polls', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
             }
+        });
+
+        console.log('Response status:', response.status);
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
+
+        const data = await response.json();
+        console.log('Polls data received:', data);
+
+        // FIXED: Handle the response structure properly
+        let polls = [];
+        if (data.polls && Array.isArray(data.polls)) {
+            polls = data.polls;
+        } else if (Array.isArray(data)) {
+            polls = data;
+        } else {
+            console.warn('Unexpected data structure:', data);
+            polls = [];
+        }
+
+        displayPolls(polls);
+        updatePollsCount(polls.length);
+
+    } catch (error) {
+        console.error('Error loading polls:', error);
+        showError('Failed to load polls: ' + error.message);
+        displayPolls([]); // Show empty state
+    }
+}
 
         async function loadFeedback(page = 1) {
     try {
