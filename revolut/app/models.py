@@ -29,6 +29,11 @@ class User(UserMixin, db.Model):
     last_login = db.Column(db.DateTime)
     roles = db.relationship('Role', secondary=user_roles, backref=db.backref('users', lazy='dynamic'))
 
+    language = db.Column(db.String(2), default='en')
+
+    def get_locale(self):
+        return self.language or 'en'
+
     def set_password(self, password):
         # Use method='pbkdf2:sha256' with a shorter salt_length to ensure hash fits in column
         self.password_hash = generate_password_hash(password, method='pbkdf2:sha256', salt_length=8)

@@ -1,8 +1,10 @@
-from flask import Blueprint, render_template, request, jsonify,Response
+from flask import Blueprint, render_template, request, jsonify,Response,current_app, session, redirect, url_for
 from flask_login import login_required, current_user
 from app.auth import role_required
 from app import db
 import logging
+from flask_babel import gettext, ngettext
+
 
 main = Blueprint('main', __name__)
 logger = logging.getLogger(__name__)
@@ -86,23 +88,71 @@ def dashboard_data():
             formatted_alerts.append({
                 'topic': alert.topic,
                 'severity': alert.severity,
+                'affected_locations': alert.affected_locations if hasattr(alert, 'affected_locations') else ['All'],
                 'created_at': alert.created_at.isoformat()
             })
+
+        # Calculate positive sentiment percentage
+        positive_count = UserFeedback.query.filter(UserFeedback.sentiment_score > 0.3).count()
+        positive_sentiment = int((positive_count / total_feedback) * 100) if total_feedback > 0 else 0
+
+        # Get active issues count
+        active_issues = Issue.query.filter_by(status='Open').count()
+
+        # Calculate average official rating
+        avg_rating = db.session.query(db.func.avg(Official.average_score)).scalar() or 0.0
+
+        # Prepare sentiment chart data (last 7 days)
+        from datetime import datetime, timedelta
+        sentiment_data = []
+        sentiment_labels = []
+        for i in range(7, 0, -1):
+            day = datetime.utcnow() - timedelta(days=i)
+            day_str = day.strftime('%Y-%m-%d')
+            sentiment_labels.append(day_str)
+
+            # Get average sentiment for this day
+            day_sentiment = db.session.query(
+                db.func.avg(UserFeedback.sentiment_score)
+            ).filter(
+                db.func.date(UserFeedback.created_at) == day.date()
+            ).scalar() or 0
+
+            sentiment_data.append(float(day_sentiment))
+
+        # Prepare issue categories data
+        issue_categories = db.session.query(
+            Issue.category, db.func.count().label('count')
+        ).group_by(Issue.category).all()
+
+        issue_labels = [category for category, _ in issue_categories]
+        issue_data = [count for _, count in issue_categories]
 
         return jsonify({
             'total_users': total_users,
             'total_polls': total_polls,
-            'active_polls': formatted_active_polls,
+            'polls': formatted_active_polls,
             'total_feedback': total_feedback,
             'total_issues': total_issues,
             'officials_count': total_officials,
             'feedback_stats': formatted_feedback_stats,
-            'recent_alerts': formatted_alerts,
+            'alerts': formatted_alerts,
             'stats': {
                 'total_polls': total_polls,
                 'total_feedback': total_feedback,
-                'total_issues': total_issues,
-                'total_officials': total_officials
+                'active_issues': active_issues,
+                'positive_sentiment': positive_sentiment,
+                'avg_rating': float(avg_rating)
+            },
+            'charts': {
+                'sentiment': {
+                    'labels': sentiment_labels,
+                    'data': sentiment_data
+                },
+                'issues': {
+                    'labels': issue_labels,
+                    'data': issue_data
+                }
             },
             'recent_activity': []
         })
@@ -243,3 +293,16 @@ def create_issue():
 @main.route('/issues/<int:issue_id>')
 def issue_details(issue_id):
     return render_template('issues/details.html', issue_id=issue_id)
+
+
+@main.route('/set_language/<language>')
+def set_language(language=None):
+    if language in current_app.config['LANGUAGES']:
+        session['language'] = language
+
+        # Update user preference if logged in
+        if current_user.is_authenticated:
+            current_user.language = language
+            db.session.commit()
+
+    return redirect(request.referrer or url_for('main.index'))
