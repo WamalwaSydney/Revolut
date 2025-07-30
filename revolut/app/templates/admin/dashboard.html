@@ -3,560 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Revolut & WDO - Admin Dashboard</title>
+    <title>Poll Management Dashboard</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/chart.js/3.9.1/chart.min.css" rel="stylesheet">
     <style>
-        :root {
-            --primary-color: #2563eb;
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
-            --danger-color: #ef4444;
-            --info-color: #06b6d4;
-            --dark-color: #1f2937;
-            --light-color: #f8fafc;
-            --border-color: #e5e7eb;
+        .poll-card {
+            transition: transform 0.2s;
         }
-
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        }
-
-        .sidebar {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-            height: calc(100vh - 2rem);
-            position: sticky;
-            top: 1rem;
-            transition: all 0.3s ease;
-        }
-
-        .main-content {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-            min-height: calc(100vh - 2rem);
-            margin-top: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .nav-link {
-            border-radius: 12px;
-            margin: 0.25rem 0;
-            transition: all 0.3s ease;
-            color: var(--dark-color);
-        }
-
-        .nav-link:hover, .nav-link.active {
-            background: linear-gradient(135deg, var(--primary-color), #3b82f6);
-            color: white;
-            transform: translateX(5px);
-        }
-
-        .card {
-            border: none;
-            border-radius: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            background: rgba(255, 255, 255, 0.8);
-        }
-
-        .card:hover {
+        .poll-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
-
-        .stat-card {
-            border-radius: 20px;
-            padding: 1.5rem;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary-color), var(--info-color));
-        }
-
-        .btn {
-            border-radius: 12px;
-            padding: 0.625rem 1.25rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .btn:hover {
-            transform: translateY(-1px);
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary-color), #3b82f6);
-            border: none;
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, var(--success-color), #059669);
-            border: none;
-        }
-
-        .btn-warning {
-            background: linear-gradient(135deg, var(--warning-color), #d97706);
-            border: none;
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, var(--danger-color), #dc2626);
-            border: none;
-        }
-
-        .table {
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
-        .table thead th {
-            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
-            border: none;
+        .poll-status {
+            font-size: 0.875rem;
             font-weight: 600;
-            color: var(--dark-color);
         }
-
-        .badge {
-            border-radius: 8px;
-            padding: 0.5rem 0.75rem;
-        }
-
-        .modal-content {
-            border-radius: 20px;
-            border: none;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-        }
-
-        .form-control, .form-select {
-            border-radius: 12px;
-            border: 2px solid var(--border-color);
-            transition: all 0.3s ease;
-        }
-
-        .form-control:focus, .form-select:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.25);
-        }
-
-        .alert {
-            border-radius: 12px;
-            border: none;
-        }
-
-        .progress {
-            height: 8px;
+        .option-bar {
+            height: 20px;
             border-radius: 4px;
+            transition: width 0.3s ease;
         }
-
-        .chart-container {
-            position: relative;
-            height: 300px;
-            background: rgba(255, 255, 255, 0.5);
-            border-radius: 16px;
+        .vote-count {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
             padding: 1rem;
+            border-radius: 0.375rem;
+            border: 1px solid #f5c2c7;
         }
-
-        .loading {
+        .loading-spinner {
             display: inline-block;
             width: 20px;
             height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #007bff;
             border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
+            animation: spin 1s linear infinite;
         }
-
         @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .feedback-card {
-            margin-bottom: 1rem;
-            border-left: 4px solid #e5e7eb;
-        }
-
-        .feedback-card.positive {
-            border-left-color: var(--success-color);
-        }
-
-        .feedback-card.negative {
-            border-left-color: var(--danger-color);
-        }
-
-        .feedback-card.neutral {
-            border-left-color: var(--warning-color);
-        }
-
-        .loading-spinner {
-            text-align: center;
-            padding: 2rem;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: #6b7280;
-        }
-
-        .empty-state i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
-    <div class="container-fluid p-3">
+    <div class="container-fluid py-4">
         <div class="row">
-            <!-- Sidebar -->
-            <div class="col-lg-2">
-                <div class="sidebar p-3">
-                    <div class="text-center mb-4">
-                        <h5 class="text-primary fw-bold">Revolut & WDO</h5>
-                        <small class="text-muted">Admin Dashboard</small>
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="bi bi-pie-chart me-2"></i>Poll Management</h2>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary" onclick="refreshPolls()">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+                        </button>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPollModal">
+                            <i class="bi bi-plus-circle me-2"></i>Create Poll
+                        </button>
                     </div>
+                </div>
 
-                    <nav class="nav flex-column">
-                        <a class="nav-link active" href="#dashboard" data-section="dashboard">
-                            <i class="bi bi-speedometer2 me-2"></i>Dashboard
-                        </a>
-                        <a class="nav-link" href="#users" data-section="users">
-                            <i class="bi bi-people me-2"></i>Users
-                        </a>
-                        <a class="nav-link" href="#polls" data-section="polls">
-                            <i class="bi bi-bar-chart me-2"></i>Polls
-                        </a>
-                        <a class="nav-link" href="#feedback" data-section="feedback">
-                            <i class="bi bi-chat-left-text me-2"></i>Feedback
-                        </a>
-                        <a class="nav-link" href="#officials" data-section="officials">
-                            <i class="bi bi-person-badge me-2"></i>Officials
-                        </a>
-                        <a class="nav-link" href="#analytics" data-section="analytics">
-                            <i class="bi bi-graph-up me-2"></i>Analytics
-                        </a>
-                        <a class="nav-link" href="#settings" data-section="settings">
-                            <i class="bi bi-gear me-2"></i>Settings
-                        </a>
-                    </nav>
-
-                    <div class="mt-auto pt-4">
-                        <div class="d-grid">
-                            <button class="btn btn-outline-danger btn-sm" onclick="logout()">
-                                <i class="bi bi-box-arrow-right me-2"></i>Logout
-                            </button>
+                <!-- Stats Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6>Total Polls</h6>
+                                        <h3 id="totalPolls">0</h3>
+                                    </div>
+                                    <i class="bi bi-pie-chart fs-1 opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6>Active Polls</h6>
+                                        <h3 id="activePolls">0</h3>
+                                    </div>
+                                    <i class="bi bi-check-circle fs-1 opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6>Total Votes</h6>
+                                        <h3 id="totalVotes">0</h3>
+                                    </div>
+                                    <i class="bi bi-people fs-1 opacity-50"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6>Expired Polls</h6>
+                                        <h3 id="expiredPolls">0</h3>
+                                    </div>
+                                    <i class="bi bi-clock-history fs-1 opacity-50"></i>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Main Content -->
-            <div class="col-lg-10">
-                <div class="main-content p-4">
+                <!-- Error Display -->
+                <div id="errorDisplay" class="error-message d-none mb-4">
+                    <strong>Error:</strong> <span id="errorMessage"></span>
+                </div>
 
-                    <!-- Dashboard Section -->
-                    <div id="dashboard-section" class="content-section">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h2 class="text-dark fw-bold">Dashboard Overview</h2>
-                            <button class="btn btn-primary" onclick="refreshDashboard()">
-                                <i class="bi bi-arrow-clockwise me-2"></i>Refresh
-                            </button>
-                        </div>
-
-                        <!-- Stats Cards -->
-                        <div class="row mb-4">
-                            <div class="col-md-3">
-                                <div class="card stat-card bg-primary text-white">
-                                    <h3 id="total-users" class="mb-1">-</h3>
-                                    <p class="mb-0">Total Users</p>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="card stat-card bg-success text-white">
-                                    <h3 id="active-polls" class="mb-1">-</h3>
-                                    <p class="mb-0">Active Polls</p>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="card stat-card bg-warning text-white">
-                                    <h3 id="feedback-count" class="mb-1">-</h3>
-                                    <p class="mb-0">Feedback Items</p>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="card stat-card bg-info text-white">
-                                    <h3 id="officials-count" class="mb-1">-</h3>
-                                    <p class="mb-0">Officials</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Charts Row -->
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5>Feedback Sentiment Trends</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="chart-container">
-                                            <canvas id="sentimentChart"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5>User Engagement</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="chart-container">
-                                            <canvas id="engagementChart"></canvas>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Recent Activity -->
-                        <div class="card">
-                            <div class="card-header">
-                                <h5>Recent Activity</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="recent-activity" class="list-group list-group-flush">
-                                    <!-- Activity items will be loaded here -->
-                                </div>
-                            </div>
-                        </div>
+                <!-- Polls List -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">All Polls</h5>
                     </div>
-
-                    <!-- Users Section -->
-                    <div id="users-section" class="content-section" style="display: none;">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h2 class="text-dark fw-bold">User Management</h2>
-                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addUserModal">
-                                <i class="bi bi-person-plus me-2"></i>Add User
-                            </button>
+                    <div class="card-body">
+                        <div id="loadingSpinner" class="text-center py-4">
+                            <div class="loading-spinner me-2"></div>
+                            Loading polls...
                         </div>
-
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-hover" id="users-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Username</th>
-                                                <th>Email</th>
-                                                <th>Roles</th>
-                                                <th>Status</th>
-                                                <th>Last Login</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <!-- Users will be loaded here -->
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Polls Section -->
-                    <div id="polls-section" class="content-section" style="display: none;">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h2 class="text-dark fw-bold">Poll Management</h2>
-                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPollModal">
-                                <i class="bi bi-plus-circle me-2"></i>Create Poll
-                            </button>
-                        </div>
-
-                        <div class="row" id="polls-grid">
+                        <div id="pollsList" class="d-none">
                             <!-- Polls will be loaded here -->
                         </div>
-                    </div>
-
-                    <!-- Feedback Section -->
-                    <div id="feedback-section" class="content-section" style="display: none;">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h2 class="text-dark fw-bold">Feedback Management</h2>
-                            <div class="btn-group">
-                                <button class="btn btn-outline-primary active" onclick="filterFeedback('all')">All</button>
-                                <button class="btn btn-outline-success" onclick="filterFeedback('positive')">Positive</button>
-                                <button class="btn btn-outline-warning" onclick="filterFeedback('neutral')">Neutral</button>
-                                <button class="btn btn-outline-danger" onclick="filterFeedback('negative')">Negative</button>
-                            </div>
-                        </div>
-
-                        <div id="feedback-list">
-                            <div class="loading-spinner">
-                                <div class="loading"></div>
-                                <p class="mt-2">Loading feedback...</p>
-                            </div>
-                        </div>
-
-                        <!-- Pagination -->
-                        <nav aria-label="Feedback pagination" id="feedback-pagination" style="display: none;">
-                            <ul class="pagination justify-content-center">
-                                <!-- Pagination will be loaded here -->
-                            </ul>
-                        </nav>
-                    </div>
-
-                    <!-- Officials Section -->
-                    <div id="officials-section" class="content-section" style="display: none;">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h2 class="text-dark fw-bold">Officials Management</h2>
-                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addOfficialModal">
-                                <i class="bi bi-person-plus me-2"></i>Add Official
-                            </button>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-hover" id="officials-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Name</th>
-                                                <th>Position</th>
-                                                <th>Constituency</th>
-                                                <th>Average Rating</th>
-                                                <th>Total Ratings</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <!-- Officials will be loaded here -->
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Analytics Section -->
-                    <div id="analytics-section" class="content-section" style="display: none;">
-                        <h2 class="text-dark fw-bold mb-4">Analytics & Reports</h2>
-
-                        <div class="row mb-4">
-                            <div class="col-md-4">
-                                <div class="card">
-                                    <div class="card-body text-center">
-                                        <i class="bi bi-graph-up text-primary" style="font-size: 2rem;"></i>
-                                        <h5 class="mt-3">Engagement Rate</h5>
-                                        <h3 class="text-primary" id="engagement-rate">-</h3>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card">
-                                    <div class="card-body text-center">
-                                        <i class="bi bi-heart text-success" style="font-size: 2rem;"></i>
-                                        <h5 class="mt-3">Satisfaction Score</h5>
-                                        <h3 class="text-success" id="satisfaction-score">-</h3>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="card">
-                                    <div class="card-body text-center">
-                                        <i class="bi bi-arrow-up-right text-info" style="font-size: 2rem;"></i>
-                                        <h5 class="mt-3">Growth Rate</h5>
-                                        <h3 class="text-info" id="growth-rate">-</h3>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h5>Detailed Analytics</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="chart-container">
-                                    <canvas id="analyticsChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Settings Section -->
-                    <div id="settings-section" class="content-section" style="display: none;">
-                        <h2 class="text-dark fw-bold mb-4">System Settings</h2>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5>General Settings</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <form id="general-settings-form">
-                                            <div class="mb-3">
-                                                <label class="form-label">System Name</label>
-                                                <input type="text" class="form-control" value="Revolut & WDO">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">Default Language</label>
-                                                <select class="form-select">
-                                                    <option value="en">English</option>
-                                                    <option value="sw">Swahili</option>
-                                                </select>
-                                            </div>
-                                            <button type="submit" class="btn btn-primary">Save Changes</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h5>SMS Configuration</h5>
-                                    </div>
-                                    <div class="card-body">
-                                        <form id="sms-settings-form">
-                                            <div class="mb-3">
-                                                <label class="form-label">Africa's Talking Username</label>
-                                                <input type="text" class="form-control" placeholder="Your AT username">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label class="form-label">API Key</label>
-                                                <input type="password" class="form-control" placeholder="Your API key">
-                                            </div>
-                                            <button type="submit" class="btn btn-success">Update SMS Settings</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
+                        <div id="noPolls" class="text-center py-4 d-none">
+                            <i class="bi bi-pie-chart fs-1 text-muted"></i>
+                            <p class="text-muted mt-2">No polls found. Create your first poll!</p>
                         </div>
                     </div>
                 </div>
@@ -564,7 +149,6 @@
         </div>
     </div>
 
-    <!-- Modals -->
     <!-- Create Poll Modal -->
     <div class="modal fade" id="createPollModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
@@ -574,988 +158,380 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="create-poll-form">
+                    <form id="createPollForm">
                         <div class="mb-3">
-                            <label class="form-label">Poll Question</label>
-                            <textarea class="form-control" name="question" rows="3" required></textarea>
+                            <label for="pollQuestion" class="form-label">Poll Question *</label>
+                            <textarea class="form-control" id="pollQuestion" rows="3" placeholder="What would you like to ask citizens about?" required></textarea>
+                            <div class="form-text">Minimum 10 characters, maximum 500 characters</div>
                         </div>
+                        
                         <div class="mb-3">
-                            <label class="form-label">Options</label>
-                            <div id="poll-options">
+                            <label class="form-label">Poll Options *</label>
+                            <div id="pollOptions">
                                 <div class="input-group mb-2">
                                     <input type="text" class="form-control poll-option" placeholder="Option 1" required>
-                                    <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
                                 </div>
                                 <div class="input-group mb-2">
                                     <input type="text" class="form-control poll-option" placeholder="Option 2" required>
-                                    <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
                                 </div>
                             </div>
-                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="addOption()">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addPollOption()">
                                 <i class="bi bi-plus"></i> Add Option
                             </button>
+                            <div class="form-text">Minimum 2 options, maximum 6 options</div>
                         </div>
+                        
                         <div class="mb-3">
-                            <label class="form-label">Duration (days)</label>
-                            <input type="number" class="form-control" name="duration_days" value="7" min="1" max="30">
-                        </div>
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="checkbox" name="notify_citizens" id="notify-citizens">
-                            <label class="form-check-label" for="notify-citizens">
-                                Send SMS notifications to citizens
-                            </label>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" onclick="createPoll()">Create Poll</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add User Modal -->
-    <div class="modal fade" id="addUserModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add New User</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="add-user-form">
-                        <div class="mb-3">
-                            <label class="form-label">Username</label>
-                            <input type="text" class="form-control" name="username" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" class="form-control" name="email" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Password</label>
-                            <input type="password" class="form-control" name="password" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Role</label>
-                            <select class="form-select" name="role" required>
-                                <option value="">Select Role</option>
-                                <option value="admin">Admin</option>
-                                <option value="cso">CSO</option>
-                                <option value="citizen">Citizen</option>
-                                <option value="official">Official</option>
+                            <label for="pollDuration" class="form-label">Duration</label>
+                            <select class="form-select" id="pollDuration">
+                                <option value="1">1 day</option>
+                                <option value="3">3 days</option>
+                                <option value="7" selected>7 days</option>
+                                <option value="14">14 days</option>
+                                <option value="30">30 days</option>
                             </select>
                         </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-success" onclick="addUser()">Add User</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add Official Modal -->
-    <div class="modal fade" id="addOfficialModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add New Official</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="add-official-form">
+                        
                         <div class="mb-3">
-                            <label class="form-label">Name</label>
-                            <input type="text" class="form-control" name="name" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Position</label>
-                            <input type="text" class="form-control" name="position" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Constituency</label>
-                            <input type="text" class="form-control" name="constituency" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Department</label>
-                            <input type="text" class="form-control" name="department">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="notifyCitizens" checked>
+                                <label class="form-check-label" for="notifyCitizens">
+                                    Notify citizens via SMS
+                                </label>
+                            </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-success" onclick="addOfficial()">Add Official</button>
+                    <button type="button" class="btn btn-primary" onclick="createPoll()">
+                        <i class="bi bi-plus-circle me-2"></i>Create Poll
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-
     <script>
         // Global variables
-        let charts = {};
-        let currentFeedbackFilter = 'all';
-        let currentFeedbackPage = 1;
-
+        let allPolls = [];
+        
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize the dashboard after Chart.js is confirmed loaded
-            waitForChartJs().then(() => {
-                initializeDashboard();
-                setupNavigation();
-                loadDashboardData();
-            });
+            loadPolls();
         });
 
-        function waitForChartJs() {
-            return new Promise((resolve) => {
-                if (typeof Chart !== 'undefined') {
-                    resolve();
-                } else {
-                    setTimeout(() => waitForChartJs().then(resolve), 100);
-                }
-            });
+        // Error handling
+        function showError(message) {
+            console.error('Error:', message);
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorDisplay').classList.remove('d-none');
         }
 
-        function initializeDashboard() {
-            // Show dashboard section by default
-            showSection('dashboard');
+        function hideError() {
+            document.getElementById('errorDisplay').classList.add('d-none');
         }
 
-        function setupNavigation() {
-            document.querySelectorAll('.nav-link').forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-
-                    // Update active nav
-                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-                    this.classList.add('active');
-
-                    // Show corresponding section
-                    const section = this.getAttribute('data-section');
-                    showSection(section);
-                });
-            });
-        }
-
-        function showSection(sectionName) {
-            // Hide all sections
-            document.querySelectorAll('.content-section').forEach(section => {
-                section.style.display = 'none';
-            });
-
-            // Show selected section
-            const targetSection = document.getElementById(sectionName + '-section');
-            if (targetSection) {
-                targetSection.style.display = 'block';
-                targetSection.classList.add('fade-in');
-
-                // Load section-specific data
-                loadSectionData(sectionName);
-            }
-
-            // Close any open modals when switching sections
-            const modals = document.querySelectorAll('.modal');
-            modals.forEach(modal => {
-                const modalInstance = bootstrap.Modal.getInstance(modal);
-                if (modalInstance) {
-                    modalInstance.hide();
-                }
-            });
-        }
-
-        function loadSectionData(section) {
-            switch(section) {
-                case 'dashboard':
-                    loadDashboardData();
-                    break;
-                case 'users':
-                    loadUsers();
-                    break;
-                case 'polls':
-                    loadPolls();
-                    break;
-                case 'feedback':
-                    loadFeedback();
-                    break;
-                case 'officials':
-                    loadOfficials();
-                    break;
-                case 'analytics':
-                    loadAnalytics();
-                    break;
-            }
-        }
-
-        async function loadDashboardData() {
-            try {
-                const response = await fetch('/api/dashboard-data');
-                const data = await response.json();
-
-                updateDashboardStats(data);
-                updateCharts(data);
-                updateRecentActivity(data);
-            } catch (error) {
-                console.error('Error loading dashboard data:', error);
-                showAlert('Error loading dashboard data', 'danger');
-            }
-        }
-
-        function updateDashboardStats(data) {
-            // Update statistics cards
-            document.getElementById('total-users').textContent = data.total_users || '0';
-            document.getElementById('active-polls').textContent = data.active_polls?.length || '0';
-            document.getElementById('feedback-count').textContent = data.total_feedback || '0';
-            document.getElementById('officials-count').textContent = data.officials_count || '0';
-        }
-
-        function updateCharts(data) {
-            // Sentiment Chart
-            const sentimentCtx = document.getElementById('sentimentChart');
-            if (sentimentCtx && data.feedback_stats) {
-                if (charts.sentiment) charts.sentiment.destroy();
-
-                charts.sentiment = new Chart(sentimentCtx, {
-                    type: 'line',
-                    data: {
-                        labels: data.feedback_stats.map(item => item.location),
-                        datasets: [{
-                            label: 'Average Sentiment',
-                            data: data.feedback_stats.map(item => item.avg_sentiment),
-                            borderColor: '#2563eb',
-                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                            tension: 0.4,
-                            fill: true
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: false,
-                                min: -1,
-                                max: 1
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        }
-                    }
-                });
-            }
-
-            // Engagement Chart (Doughnut)
-            const engagementCtx = document.getElementById('engagementChart');
-            if (engagementCtx && data.active_polls) {
-                if (charts.engagement) charts.engagement.destroy();
-
-                const totalVotes = data.active_polls.reduce((sum, poll) => {
-                    return sum + poll.options.reduce((optSum, opt) => optSum + (opt.votes || 0), 0);
-                }, 0);
-
-                charts.engagement = new Chart(engagementCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Active Users', 'Inactive Users'],
-                        datasets: [{
-                            data: [totalVotes, Math.max(0, (data.total_users || 100) - totalVotes)],
-                            backgroundColor: ['#10b981', '#f3f4f6'],
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom'
-                            }
-                        }
-                    }
-                });
-            }
-        }
-
-        function updateRecentActivity(data) {
-            const activityContainer = document.getElementById('recent-activity');
-            const activities = [
-                { text: `${data.active_polls?.length || 0} active polls`, icon: 'bi-bar-chart', time: '2 minutes ago', type: 'info' },
-                { text: `New feedback received`, icon: 'bi-chat-left-text', time: '5 minutes ago', type: 'success' },
-                { text: `Poll created successfully`, icon: 'bi-plus-circle', time: '15 minutes ago', type: 'primary' },
-                { text: `System backup completed`, icon: 'bi-shield-check', time: '1 hour ago', type: 'success' }
-            ];
-
-            activityContainer.innerHTML = activities.map(activity => `
-                <div class="list-group-item border-0 d-flex align-items-center">
-                    <div class="me-3">
-                        <div class="bg-${activity.type} text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                            <i class="bi ${activity.icon}"></i>
-                        </div>
-                    </div>
-                    <div class="flex-grow-1">
-                        <div class="fw-medium">${activity.text}</div>
-                        <small class="text-muted">${activity.time}</small>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        async function loadUsers() {
-            try {
-                const response = await fetch('/admin/users');
-                const users = await response.json();
-
-                const tbody = document.querySelector('#users-table tbody');
-                tbody.innerHTML = users.map(user => `
-                    <tr>
-                        <td>${user.username}</td>
-                        <td>${user.email}</td>
-                        <td>
-                            ${user.roles.map(role => `<span class="badge bg-primary me-1">${role}</span>`).join('')}
-                        </td>
-                        <td>
-                            <span class="badge bg-success">Active</span>
-                        </td>
-                        <td>${user.last_login || 'Never'}</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-primary me-2" onclick="editUser(${user.id})">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${user.id})">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (error) {
-                console.error('Error loading users:', error);
-                showAlert('Error loading users', 'danger');
-            }
-        }
-
+        // Load polls from API
         async function loadPolls() {
-    try {
-        console.log('Loading polls from /api/polls...');
-        
-        // FIXED: Use /api/polls instead of /admin/polls
-        const response = await fetch('/api/polls', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        });
-
-        console.log('Response status:', response.status);
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log('Polls data received:', data);
-
-        // FIXED: Handle the response structure properly
-        let polls = [];
-        if (data.polls && Array.isArray(data.polls)) {
-            polls = data.polls;
-        } else if (Array.isArray(data)) {
-            polls = data;
-        } else {
-            console.warn('Unexpected data structure:', data);
-            polls = [];
-        }
-
-        displayPolls(polls);
-        updatePollsCount(polls.length);
-
-    } catch (error) {
-        console.error('Error loading polls:', error);
-        showError('Failed to load polls: ' + error.message);
-        displayPolls([]); // Show empty state
-    }
-}
-
-        async function loadFeedback(page = 1) {
-    try {
-        // Show loading state
-        const feedbackList = document.getElementById('feedback-list');
-        feedbackList.innerHTML = `
-            <div class="text-center py-4">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-2">Loading feedback data...</p>
-            </div>
-        `;
-
-        // Build request URL with pagination and filters
-        let url = `/api/feedback?page=${page}&per_page=10`;
-
-        // Add sentiment filter if active
-        if (currentFeedbackFilter && currentFeedbackFilter !== 'all') {
-            url += `&sentiment=${currentFeedbackFilter}`;
-        }
-
-        // Add authentication headers if needed
-        const headers = {
-            'Content-Type': 'application/json'
-            // Uncomment if authentication is required
-            // 'Authorization': 'Bearer ' + localStorage.getItem('authToken')
-        };
-
-        const response = await fetch(url, { headers });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log("Feedback API Response:", data);
-
-        // Check if we received valid feedback data
-        if (!data.feedback || !Array.isArray(data.feedback)) {
-            throw new Error("Invalid feedback data structure received");
-        }
-
-        if (data.feedback.length === 0) {
-            feedbackList.innerHTML = `
-                <div class="alert alert-info">
-                    No feedback items found matching your criteria.
-                </div>
-            `;
-            return;
-        }
-
-        // Render feedback items
-        feedbackList.innerHTML = data.feedback.map(item => `
-            <div class="card mb-3">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <div>
-                            <span class="badge bg-${getSentimentColor(item.sentiment_score)}">
-                                ${getSentimentLabel(item.sentiment_score)}
-                            </span>
-                            ${item.location ? `
-                                <span class="badge bg-info ms-2">${item.location}</span>
-                            ` : ''}
-                            ${item.issue_id ? `
-                                <span class="badge bg-secondary ms-2">Issue #${item.issue_id}</span>
-                            ` : ''}
-                        </div>
-                        <small class="text-muted">
-                            ${item.created_at ? new Date(item.created_at).toLocaleString() : ''}
-                        </small>
-                    </div>
-                    <p class="mb-2">${item.content || 'No content provided'}</p>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <small class="text-muted">
-                            ${item.source ? `Source: ${item.source} | ` : ''}
-                            ${item.is_processed ? 'Processed' : 'Pending'}
-                        </small>
-
-                    </div>
-                </div>
-            </div>
-        `).join('');
-
-        // Add pagination controls if needed
-        if (data.pages > 1) {
-            feedbackList.innerHTML += `
-                <nav aria-label="Feedback pagination">
-                    <ul class="pagination justify-content-center mt-4">
-                        <li class="page-item ${data.current_page === 1 ? 'disabled' : ''}">
-                            <a class="page-link" href="#" onclick="loadFeedbackPage(${data.current_page - 1})">Previous</a>
-                        </li>
-                        ${Array.from({length: data.pages}, (_, i) => `
-                            <li class="page-item ${i + 1 === data.current_page ? 'active' : ''}">
-                                <a class="page-link" href="#" onclick="loadFeedbackPage(${i + 1})">${i + 1}</a>
-                            </li>
-                        `).join('')}
-                        <li class="page-item ${data.current_page === data.pages ? 'disabled' : ''}">
-                            <a class="page-link" href="#" onclick="loadFeedbackPage(${data.current_page + 1})">Next</a>
-                        </li>
-                    </ul>
-                </nav>
-            `;
-        }
-
-    } catch (error) {
-        console.error('Error loading feedback:', error);
-        const feedbackList = document.getElementById('feedback-list');
-        feedbackList.innerHTML = `
-            <div class="alert alert-danger">
-                Failed to load feedback: ${error.message}
-                <button class="btn btn-sm btn-outline-primary mt-2" onclick="loadFeedback()">
-                    <i class="bi bi-arrow-clockwise"></i> Try Again
-                </button>
-            </div>
-        `;
-    }
-}
-
-// // Helper function for pagination
-// function loadFeedbackPage(page) {
-//     currentFeedbackPage = page;
-//     loadFeedback(page);
-// }
-
-        function updateFeedbackPagination(data) {
-            const paginationContainer = document.getElementById('feedback-pagination');
-
-            if (data.pages <= 1) {
-                paginationContainer.style.display = 'none';
-                return;
-            }
-
-            paginationContainer.style.display = 'block';
-            const pagination = paginationContainer.querySelector('.pagination');
-
-            let paginationHtml = '';
-
-            // Previous button
-            if (data.current_page > 1) {
-                paginationHtml += `
-                    <li class="page-item">
-                        <a class="page-link" href="#" onclick="loadFeedback(${data.current_page - 1}); return false;">
-                            <i class="bi bi-chevron-left"></i>
-                        </a>
-                    </li>
-                `;
-            }
-
-            // Page numbers
-            for (let i = 1; i <= Math.min(data.pages, 10); i++) {
-                const isActive = i === data.current_page;
-                paginationHtml += `
-                    <li class="page-item ${isActive ? 'active' : ''}">
-                        <a class="page-link" href="#" onclick="loadFeedback(${i}); return false;">${i}</a>
-                    </li>
-                `;
-            }
-
-            // Next button
-            if (data.current_page < data.pages) {
-                paginationHtml += `
-                    <li class="page-item">
-                        <a class="page-link" href="#" onclick="loadFeedback(${data.current_page + 1}); return false;">
-                            <i class="bi bi-chevron-right"></i>
-                        </a>
-                    </li>
-                `;
-            }
-
-            pagination.innerHTML = paginationHtml;
-        }
-
-        async function loadOfficials() {
             try {
-                const response = await fetch('/api/scorecards/officials');
+                hideError();
+                document.getElementById('loadingSpinner').classList.remove('d-none');
+                document.getElementById('pollsList').classList.add('d-none');
+                document.getElementById('noPolls').classList.add('d-none');
+
+                // Try different API endpoints based on user role
+                let response;
+                try {
+                    // First try the admin polls results endpoint
+                    response = await fetch('/api/polls/results');
+                } catch (e) {
+                    // Fallback to regular polls endpoint
+                    response = await fetch('/api/polls');
+                }
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
                 const data = await response.json();
+                console.log('API Response:', data);
 
-                // Flatten officials from grouped data
-                const officials = [];
-                Object.values(data.officials).forEach(group => {
-                    officials.push(...group);
-                });
-
-                const tbody = document.querySelector('#officials-table tbody');
-                tbody.innerHTML = officials.map(official => `
-                    <tr>
-                        <td>${official.name}</td>
-                        <td>${official.position || 'N/A'}</td>
-                        <td>${official.constituency || 'N/A'}</td>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <span class="me-2">${official.average_score ? official.average_score.toFixed(1) : 'N/A'}</span>
-                                ${official.average_score ? generateStarRating(official.average_score) : ''}
-                            </div>
-                        </td>
-                        <td>${official.rating_count || 0}</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-primary me-2" onclick="editOfficial(${official.id})">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-info me-2" onclick="viewOfficialDetails(${official.id})">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteOfficial(${official.id})">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (error) {
-                console.error('Error loading officials:', error);
-                showAlert('Error loading officials', 'danger');
-            }
-        }
-
-        async function loadAnalytics() {
-            try {
-                // Simulate analytics data
-                document.getElementById('engagement-rate').textContent = '73.5%';
-                document.getElementById('satisfaction-score').textContent = '4.2/5';
-                document.getElementById('growth-rate').textContent = '+12.3%';
-
-                // Analytics Chart
-                const analyticsCtx = document.getElementById('analyticsChart');
-                if (analyticsCtx) {
-                    if (charts.analytics) charts.analytics.destroy();
-
-                    charts.analytics = new Chart(analyticsCtx, {
-                        type: 'bar',
-                        data: {
-                            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                            datasets: [{
-                                label: 'User Engagement',
-                                data: [65, 59, 80, 81, 56, 75],
-                                backgroundColor: 'rgba(37, 99, 235, 0.8)',
-                                borderColor: '#2563eb',
-                                borderWidth: 1
-                            }, {
-                                label: 'Feedback Volume',
-                                data: [45, 39, 60, 71, 46, 65],
-                                backgroundColor: 'rgba(16, 185, 129, 0.8)',
-                                borderColor: '#10b981',
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: true
-                                }
-                            }
-                        }
-                    });
+                // Handle different response formats
+                let polls = [];
+                if (data.polls && Array.isArray(data.polls)) {
+                    polls = data.polls;
+                } else if (Array.isArray(data)) {
+                    polls = data;
+                } else {
+                    throw new Error('Invalid response format: expected polls array');
                 }
+
+                allPolls = polls;
+                displayPolls(polls);
+                updateStats(polls);
+
             } catch (error) {
-                console.error('Error loading analytics:', error);
-                showAlert('Error loading analytics', 'danger');
+                console.error('Failed to load polls:', error);
+                showError(`Failed to load polls: ${error.message}`);
+            } finally {
+                document.getElementById('loadingSpinner').classList.add('d-none');
             }
         }
 
-        // Utility functions
-        function getSentimentColor(score) {
-            if (score > 0.1) return 'success';
-            if (score < -0.1) return 'danger';
-            return 'warning';
-        }
+        // Display polls in the UI
+        function displayPolls(polls) {
+            const pollsList = document.getElementById('pollsList');
+            const noPolls = document.getElementById('noPolls');
 
-        function getSentimentLabel(score) {
-            if (score > 0.1) return 'Positive';
-            if (score < -0.1) return 'Negative';
-            return 'Neutral';
-        }
-
-        function getSentimentClass(score) {
-            if (score > 0.1) return 'positive';
-            if (score < -0.1) return 'negative';
-            return 'neutral';
-        }
-
-        function formatDate(dateString) {
-            try {
-                const date = new Date(dateString);
-                return date.toLocaleString();
-            } catch (e) {
-                return dateString;
-            }
-        }
-
-        function escapeHtml(unsafe) {
-            return unsafe
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
-
-        function generateStarRating(rating) {
-            const fullStars = Math.floor(rating);
-            const halfStar = rating % 1 >= 0.5;
-            let stars = '';
-
-            for (let i = 0; i < fullStars; i++) {
-                stars += '<i class="bi bi-star-fill text-warning"></i>';
-            }
-            if (halfStar) {
-                stars += '<i class="bi bi-star-half text-warning"></i>';
-            }
-            for (let i = fullStars + (halfStar ? 1 : 0); i < 5; i++) {
-                stars += '<i class="bi bi-star text-muted"></i>';
-            }
-
-            return stars;
-        }
-
-        function showAlert(message, type = 'info') {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-            alertDiv.innerHTML = `
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-
-            document.body.appendChild(alertDiv);
-
-            setTimeout(() => {
-                if (alertDiv.parentNode) {
-                    alertDiv.remove();
-                }
-            }, 5000);
-        }
-
-        // Poll management functions
-        function addOption() {
-            const optionsContainer = document.getElementById('poll-options');
-            const optionCount = optionsContainer.children.length + 1;
-
-            const optionDiv = document.createElement('div');
-            optionDiv.className = 'input-group mb-2';
-            optionDiv.innerHTML = `
-                <input type="text" class="form-control poll-option" placeholder="Option ${optionCount}" required>
-                <button type="button" class="btn btn-outline-danger" onclick="removeOption(this)">
-                    <i class="bi bi-trash"></i>
-                </button>
-            `;
-
-            optionsContainer.appendChild(optionDiv);
-        }
-
-        function removeOption(button) {
-            const optionsContainer = document.getElementById('poll-options');
-            if (optionsContainer.children.length > 2) {
-                button.parentElement.remove();
-            } else {
-                showAlert('A poll must have at least 2 options', 'warning');
-            }
-        }
-
-        async function createPoll() {
-            const form = document.getElementById('create-poll-form');
-            const formData = new FormData(form);
-
-            const options = Array.from(document.querySelectorAll('.poll-option'))
-                .map(input => input.value.trim())
-                .filter(value => value.length > 0);
-
-            if (options.length < 2) {
-                showAlert('Please provide at least 2 options', 'warning');
+            if (!polls || polls.length === 0) {
+                pollsList.classList.add('d-none');
+                noPolls.classList.remove('d-none');
                 return;
             }
 
-            const pollData = {
-                question: formData.get('question'),
-                options: options,
-                duration_days: parseInt(formData.get('duration_days')),
-                notify_citizens: formData.get('notify_citizens') === 'on'
-            };
+            pollsList.classList.remove('d-none');
+            noPolls.classList.add('d-none');
 
+            pollsList.innerHTML = polls.map(poll => createPollCard(poll)).join('');
+        }
+
+        // Create poll card HTML
+        function createPollCard(poll) {
+            const isActive = poll.is_active || (poll.expires_at && new Date(poll.expires_at) > new Date());
+            const statusClass = isActive ? 'success' : 'secondary';
+            const statusText = isActive ? 'Active' : 'Expired';
+            
+            const totalVotes = poll.total_votes || 0;
+            const createdAt = poll.created_at ? new Date(poll.created_at).toLocaleDateString() : 'Unknown';
+            const expiresAt = poll.expires_at ? new Date(poll.expires_at).toLocaleDateString() : 'No expiry';
+
+            const optionsHtml = (poll.options || []).map(option => {
+                const votes = option.votes || 0;
+                const percentage = option.percentage || 0;
+                return `
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-medium">${escapeHtml(option.text || 'Unknown option')}</span>
+                            <span class="vote-count">${votes} votes (${percentage}%)</span>
+                        </div>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar option-bar" style="width: ${percentage}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card poll-card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span class="badge bg-${statusClass} poll-status">${statusText}</span>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    Actions
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="viewPollDetails(${poll.id})">
+                                        <i class="bi bi-eye me-2"></i>View Details
+                                    </a></li>
+                                    ${isActive ? `
+                                        <li><a class="dropdown-item text-warning" href="#" onclick="endPoll(${poll.id})">
+                                            <i class="bi bi-stop-circle me-2"></i>End Poll
+                                        </a></li>
+                                    ` : ''}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="#" onclick="deletePoll(${poll.id})">
+                                        <i class="bi bi-trash me-2"></i>Delete
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h6 class="card-title">${escapeHtml(poll.question || 'No question')}</h6>
+                            <div class="mb-3">
+                                ${optionsHtml}
+                            </div>
+                            <div class="text-muted small">
+                                <div><i class="bi bi-calendar me-1"></i>Created: ${createdAt}</div>
+                                <div><i class="bi bi-clock me-1"></i>Expires: ${expiresAt}</div>
+                                <div><i class="bi bi-people me-1"></i>Total Votes: ${totalVotes}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Update statistics
+        function updateStats(polls) {
+            const totalPolls = polls.length;
+            const activePolls = polls.filter(poll => poll.is_active || (poll.expires_at && new Date(poll.expires_at) > new Date())).length;
+            const expiredPolls = totalPolls - activePolls;
+            const totalVotes = polls.reduce((sum, poll) => sum + (poll.total_votes || 0), 0);
+
+            document.getElementById('totalPolls').textContent = totalPolls;
+            document.getElementById('activePolls').textContent = activePolls;
+            document.getElementById('expiredPolls').textContent = expiredPolls;
+            document.getElementById('totalVotes').textContent = totalVotes;
+        }
+
+        // Add poll option
+        function addPollOption() {
+            const container = document.getElementById('pollOptions');
+            const optionCount = container.children.length;
+            
+            if (optionCount < 6) {
+                const div = document.createElement('div');
+                div.className = 'input-group mb-2';
+                div.innerHTML = `
+                    <input type="text" class="form-control poll-option" placeholder="Option ${optionCount + 1}" required>
+                    <button type="button" class="btn btn-outline-danger" onclick="removePollOption(this)">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                `;
+                container.appendChild(div);
+            }
+        }
+
+        // Remove poll option
+        function removePollOption(button) {
+            const container = document.getElementById('pollOptions');
+            if (container.children.length > 2) {
+                button.closest('.input-group').remove();
+            }
+        }
+
+        // Create new poll
+        async function createPoll() {
             try {
+                const question = document.getElementById('pollQuestion').value.trim();
+                const options = Array.from(document.querySelectorAll('.poll-option'))
+                    .map(input => input.value.trim())
+                    .filter(option => option);
+                const duration = parseInt(document.getElementById('pollDuration').value);
+                const notifyCitizens = document.getElementById('notifyCitizens').checked;
+
+                // Validation
+                if (question.length < 10) {
+                    alert('Poll question must be at least 10 characters long');
+                    return;
+                }
+
+                if (options.length < 2) {
+                    alert('Poll must have at least 2 options');
+                    return;
+                }
+
                 const response = await fetch('/api/polls', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(pollData)
+                    body: JSON.stringify({
+                        question: question,
+                        options: options,
+                        duration_days: duration,
+                        notify_citizens: notifyCitizens
+                    })
                 });
 
                 const result = await response.json();
 
                 if (response.ok) {
-                    showAlert('Poll created successfully!', 'success');
-                    form.reset();
+                    alert('Poll created successfully!');
                     bootstrap.Modal.getInstance(document.getElementById('createPollModal')).hide();
-                    if (document.getElementById('polls-section').style.display !== 'none') {
-                        loadPolls();
-                    }
+                    document.getElementById('createPollForm').reset();
+                    // Reset options to default 2
+                    const container = document.getElementById('pollOptions');
+                    container.innerHTML = `
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control poll-option" placeholder="Option 1" required>
+                        </div>
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control poll-option" placeholder="Option 2" required>
+                        </div>
+                    `;
+                    loadPolls(); // Refresh the polls list
                 } else {
-                    showAlert(result.error || 'Failed to create poll', 'danger');
+                    const errorMsg = result.errors ? result.errors.join(', ') : result.error || 'Unknown error';
+                    alert('Error creating poll: ' + errorMsg);
                 }
             } catch (error) {
                 console.error('Error creating poll:', error);
-                showAlert('Error creating poll', 'danger');
+                alert('Error creating poll: ' + error.message);
             }
         }
 
-        async function addUser() {
-            const form = document.getElementById('add-user-form');
-            const formData = new FormData(form);
+        // View poll details
+        function viewPollDetails(pollId) {
+            const poll = allPolls.find(p => p.id === pollId);
+            if (poll) {
+                alert(`Poll Details:\n\nQuestion: ${poll.question}\nTotal Votes: ${poll.total_votes || 0}\nStatus: ${poll.is_active ? 'Active' : 'Expired'}`);
+            }
+        }
 
-            const userData = {
-                username: formData.get('username'),
-                email: formData.get('email'),
-                password: formData.get('password'),
-                role: formData.get('role'),
-                terms: true
-            };
+        // Delete poll
+        async function deletePoll(pollId) {
+            if (confirm('Are you sure you want to delete this poll? This action cannot be undone.')) {
+                try {
+                    const response = await fetch(`/admin/polls/${pollId}`, {
+                        method: 'DELETE'
+                    });
 
-            try {
-                const response = await fetch('/auth/register', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(userData)
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    showAlert('User created successfully!', 'success');
-                    form.reset();
-                    bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
-                    if (document.getElementById('users-section').style.display !== 'none') {
-                        loadUsers();
+                    if (response.ok) {
+                        alert('Poll deleted successfully!');
+                        loadPolls(); // Refresh the polls list
+                    } else {
+                        const result = await response.json();
+                        alert('Error deleting poll: ' + (result.error || 'Unknown error'));
                     }
-                } else {
-                    showAlert(result.error || 'Failed to create user', 'danger');
+                } catch (error) {
+                    console.error('Error deleting poll:', error);
+                    alert('Error deleting poll: ' + error.message);
                 }
-            } catch (error) {
-                console.error('Error creating user:', error);
-                showAlert('Error creating user', 'danger');
             }
         }
 
-        async function addOfficial() {
-            const form = document.getElementById('add-official-form');
-            const formData = new FormData(form);
+        // End poll early
+        async function endPoll(pollId) {
+            if (confirm('Are you sure you want to end this poll early?')) {
+                try {
+                    const response = await fetch(`/admin/polls/${pollId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            expires_at: new Date().toISOString()
+                        })
+                    });
 
-            const officialData = {
-                name: formData.get('name'),
-                position: formData.get('position'),
-                constituency: formData.get('constituency'),
-                department: formData.get('department')
-            };
-
-            try {
-                const response = await fetch('/admin/officials', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(officialData)
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    showAlert('Official added successfully!', 'success');
-                    form.reset();
-                    bootstrap.Modal.getInstance(document.getElementById('addOfficialModal')).hide();
-                    if (document.getElementById('officials-section').style.display !== 'none') {
-                        loadOfficials();
+                    if (response.ok) {
+                        alert('Poll ended successfully!');
+                        loadPolls(); // Refresh the polls list
+                    } else {
+                        const result = await response.json();
+                        alert('Error ending poll: ' + (result.error || 'Unknown error'));
                     }
-                } else {
-                    showAlert(result.error || 'Failed to add official', 'danger');
+                } catch (error) {
+                    console.error('Error ending poll:', error);
+                    alert('Error ending poll: ' + error.message);
                 }
-            } catch (error) {
-                console.error('Error adding official:', error);
-                showAlert('Error adding official', 'danger');
             }
         }
 
-        function refreshDashboard() {
-            const button = event.target;
-            const originalHtml = button.innerHTML;
-
-            button.innerHTML = '<span class="loading"></span> Refreshing...';
-            button.disabled = true;
-
-            loadDashboardData().finally(() => {
-                button.innerHTML = originalHtml;
-                button.disabled = false;
-                showAlert('Dashboard refreshed successfully!', 'success');
-            });
+        // Refresh polls
+        function refreshPolls() {
+            loadPolls();
         }
 
-        function filterFeedback(type) {
-            // Update active filter button
-            document.querySelectorAll('#feedback-section .btn-group .btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-
-            // Set current filter and reload feedback
-            currentFeedbackFilter = type;
-            currentFeedbackPage = 1;
-            loadFeedback(1);
-        }
-
-        function logout() {
-            if (confirm('Are you sure you want to logout?')) {
-                window.location.href = '/auth/logout';
-            }
-        }
-
-        // Placeholder functions for CRUD operations
-        function editUser(userId) {
-            console.log('Edit user:', userId);
-            showAlert('Edit user functionality coming soon!', 'info');
-        }
-
-        function deleteUser(userId) {
-            if (confirm('Are you sure you want to delete this user?')) {
-                console.log('Delete user:', userId);
-                showAlert('Delete user functionality coming soon!', 'info');
-            }
-        }
-
-        function editPoll(pollId) {
-            console.log('Edit poll:', pollId);
-            showAlert('Edit poll functionality coming soon!', 'info');
-        }
-
-        function deletePoll(pollId) {
-            if (confirm('Are you sure you want to delete this poll?')) {
-                console.log('Delete poll:', pollId);
-                showAlert('Delete poll functionality coming soon!', 'info');
-            }
-        }
-
-        function editOfficial(officialId) {
-            console.log('Edit official:', officialId);
-            showAlert('Edit official functionality coming soon!', 'info');
-        }
-
-        function viewOfficialDetails(officialId) {
-            console.log('View official details:', officialId);
-            showAlert('View official details functionality coming soon!', 'info');
-        }
-
-        function deleteOfficial(officialId) {
-            if (confirm('Are you sure you want to delete this official?')) {
-                console.log('Delete official:', officialId);
-                showAlert('Delete official functionality coming soon!', 'info');
-            }
-        }
-
-        function viewFeedback(feedbackId) {
-            console.log('View feedback:', feedbackId);
-            showAlert('View feedback details functionality coming soon!', 'info');
-        }
-
-        function respondToFeedback(feedbackId) {
-            console.log('Respond to feedback:', feedbackId);
-            showAlert('Respond to feedback functionality coming soon!', 'info');
+        // Utility function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
     </script>
 </body>
