@@ -211,12 +211,12 @@ function searchOfficials() {
                     <button type="button" class="list-group-item list-group-item-action"
                             onclick="selectOfficial(
                                 '${official.id}',
-                                '${official.name.replace(/'/g, "\\'")}',
-                                '${official.position.replace(/'/g, "\\'")}',
-                                '${official.constituency.replace(/'/g, "\\'")}'
+                                '${(official.name || '').replace(/'/g, "\\'")}',
+                                '${(official.position || '').replace(/'/g, "\\'")}',
+                                '${(official.constituency || '').replace(/'/g, "\\'")}'
                             )">
-                        <strong>${official.name}</strong><br>
-                        <small>${official.position}, ${official.constituency}</small>
+                        <strong>${official.name || ''}</strong><br>
+                        <small>${official.position || ''}, ${official.constituency || ''}</small>
                     </button>
                 `).join('');
             }
