@@ -949,6 +949,10 @@
         async function loadPolls() {
             try {
                 const response = await fetch('/api/polls/results');
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('Not authenticated or invalid response.');
+                }
                 const data = await response.json();
 
                 const pollsGrid = document.getElementById('polls-grid');
@@ -991,7 +995,7 @@
                 `).join('');
             } catch (error) {
                 console.error('Error loading polls:', error);
-                showAlert('Error loading polls', 'danger');
+                showAlert('Error loading polls. Please ensure you are logged in as a CSO/admin.', 'danger');
             }
         }
 
