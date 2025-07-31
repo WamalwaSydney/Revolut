@@ -48,7 +48,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Load CSO's polls
-    fetch('/admin/polls?user=current')
+    fetch('/api/polls')
         .then(response => response.json())
         .then(data => {
             const container = document.getElementById('pollsList');
@@ -75,17 +75,14 @@ document.addEventListener('DOMContentLoaded', function() {
             .split('\n')
             .filter(opt => opt.trim() !== '');
 
-        const pollData = {
-            question: document.getElementById('pollQuestion').value,
-            options: options,
-            expires_at: new Date(Date.now() +
-                parseInt(document.getElementById('pollDuration').value) * 24 * 60 * 60 * 1000)
-        };
-
-        fetch('/admin/polls', {
+        fetch('/api/polls', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(pollData)
+            body: JSON.stringify({
+                question: document.getElementById('pollQuestion').value,
+                options: options,
+                duration_days: parseInt(document.getElementById('pollDuration').value)
+            })
         })
         .then(response => response.json())
         .then(data => {
