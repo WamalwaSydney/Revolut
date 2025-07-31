@@ -204,7 +204,9 @@ function searchOfficials() {
             const container = document.getElementById('officialList');
             const resultsDiv = document.getElementById('officialResults');
 
-            if (data.length === 0) {
+            if (!Array.isArray(data)) {
+                container.innerHTML = '<div class="list-group-item text-danger">Error loading officials. Please try again.</div>';
+            } else if (data.length === 0) {
                 container.innerHTML = '<div class="list-group-item">No officials found</div>';
             } else {
                 container.innerHTML = data.map(official => `
