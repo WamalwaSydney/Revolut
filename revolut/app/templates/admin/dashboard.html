@@ -1398,6 +1398,7 @@
                     if (document.getElementById('polls-section').style.display !== 'none') {
                         loadPolls();
                     }
+                    loadDashboardData();
                 } else {
                     showAlert(result.error || 'Failed to create poll', 'danger');
                 }
