@@ -11,6 +11,11 @@ logger = logging.getLogger(__name__)
 
 app = create_app()
 
+@app.route('/ping')
+def ping():
+    return 'OK', 200
+
+
 def create_default_data():
     """Create default roles and admin user"""
     try:
