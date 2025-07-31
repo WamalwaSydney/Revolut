@@ -474,3 +474,25 @@ def get_dashboard_data():
     except Exception as e:
         current_app.logger.error(f"Error getting dashboard data: {str(e)}")
         return jsonify({"error": "Failed to get dashboard data"}), 500
+
+@api.route('/scorecards/top')
+def get_top_officials():
+    """Return the top N officials by average_score (descending)."""
+    try:
+        limit = request.args.get('limit', default=5, type=int)
+        officials = Official.query.order_by(Official.average_score.desc()).limit(limit).all()
+        result = []
+        for official in officials:
+            result.append({
+                'id': official.id,
+                'name': official.name,
+                'position': official.position,
+                'constituency': official.constituency,
+                'department': official.department,
+                'average_score': official.average_score,
+                'rating_count': official.rating_count
+            })
+        return jsonify(result)
+    except Exception as e:
+        current_app.logger.error(f"Error getting top officials: {str(e)}")
+        return jsonify({"error": "Failed to get top officials"}), 500
