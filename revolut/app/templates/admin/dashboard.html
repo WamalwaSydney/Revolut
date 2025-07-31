@@ -948,7 +948,7 @@
 
         async function loadPolls() {
             try {
-                const response = await fetch('/api/admin/polls/results');
+                const response = await fetch('/admin/api/polls/results');
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
                     throw new Error('Not authenticated or invalid response.');
