@@ -13,8 +13,8 @@ This is a Flask-based web application with PostgreSQL database backend. The proj
 1. **Clone the repository**
 
 ```bash
-git clone <repository-url>
-cd Revolut
+git clone [<repository-url>](https://github.com/WamalwaSydney/Revolut.git)
+cd Revolut\revolut
 ```
 
 2. **Create and activate a virtual environment**
