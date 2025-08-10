@@ -116,4 +116,8 @@ gunicorn -w 4 -b 0.0.0.0:8000 wsgi:app
 
 ---
 
+Admin Credentials
+username: admin
+password: admin123
+
 This README provides all necessary steps to set up, run, and test the Revolut project. For any issues, please check the project documentation or contact the maintainers.
